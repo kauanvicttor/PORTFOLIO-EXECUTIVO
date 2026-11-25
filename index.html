@@ -55,6 +55,8 @@
     .nav a { font-size: 0.875rem; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
     .nav a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
 
+    .menu-toggle { display: none; }
+
     /* Sections */
     section { padding: 4.5rem 0; border-bottom: 1px solid var(--rule); }
     .eyebrow {
@@ -86,6 +88,8 @@
     .facts div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9rem; }
     .facts dt { color: var(--ink-3); }
     .facts dd { color: var(--ink); }
+    .facts .os-icons { display: flex; align-items: center; gap: 0.6rem; }
+    .facts .os-icons svg { width: 1.05rem; height: 1.05rem; color: var(--ink-2); flex: none; }
 
     /* Numbers */
     .numbers { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); margin-top: 3.5rem; }
@@ -93,6 +97,8 @@
     .numbers div + div { padding-left: 1.25rem; border-left: 1px solid var(--rule); }
     .numbers strong { display: block; font-family: var(--serif); font-size: 2rem; font-weight: 600; line-height: 1.1; }
     .numbers span { font-size: 0.85rem; color: var(--ink-2); }
+    .numbers .metric-n8n strong { display: flex; align-items: center; gap: 0.5rem; }
+    .numbers .metric-n8n svg { width: 2.1rem; height: 2.1rem; color: var(--accent); flex: none; }
 
     /* O que faço */
     .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem 2.5rem; }
@@ -332,6 +338,7 @@
       .caret, .dot { animation: none; }
       .wf-packet { display: none; }
       html { scroll-behavior: auto; }
+      .menu-toggle span { transition: none; }
     }
     @media (max-width: 900px) {
       .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; }
@@ -340,6 +347,32 @@
     @media (max-width: 640px) {
       .hero .facts div { grid-template-columns: 1fr; gap: 0.1rem; }
       .wf-log { font-size: 0.66rem; }
+
+      .menu-toggle {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+        width: 40px; height: 40px; flex: none; cursor: pointer;
+        background: transparent; border: 1px solid var(--night-rule); border-radius: 4px;
+      }
+      .menu-toggle:hover { background: rgba(61, 214, 140, 0.08); }
+      .menu-toggle:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+      .menu-toggle span {
+        display: block; width: 18px; height: 2px; border-radius: 1px;
+        background: var(--signal);
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+      .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+      .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+      .nav {
+        display: none; position: absolute; top: 100%; left: 0; right: 0;
+        flex-direction: column; gap: 0; overflow: visible;
+        background: var(--night); border-bottom: 1px solid var(--night-rule);
+        padding: 0.25rem 1.5rem 0.75rem;
+      }
+      .nav.is-open { display: flex; }
+      .nav li + li { border-top: 1px solid var(--night-rule); }
+      .nav a { display: block; padding: 0.7rem 0; }
     }
   </style>
 </head>
@@ -348,7 +381,10 @@
   <header class="topbar">
     <div class="wrap">
       <a href="#inicio" class="brand">Kauan Silva<span> · Portfólio</span></a>
-      <ul class="nav">
+      <button type="button" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav" id="nav">
         <li><a href="#automacoes">Automações</a></li>
         <li><a href="#projeto">Projeto</a></li>
         <li><a href="#experiencia">Experiência</a></li>
@@ -382,40 +418,43 @@
             <div><dt>sistemas</dt><dd>TMS, ERP, CRM, VTEX, saúde e financeiro</dd></div>
             <div><dt>ferramentas</dt><dd>n8n, Bitrix24, Grafana, Supabase, SQL Server, Claude Code, Codex, Antigravity IDE</dd></div>
             <div><dt>formação</dt><dd>Engenharia de Software (em curso) · Técnico em TI</dd></div>
+            <div><dt>OS</dt><dd class="os-icons"><svg viewBox="0 0 24 24" role="img" aria-label="Windows"><title>Windows</title><path fill="currentColor" d="M0 3.449 9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg><svg viewBox="0 0 24 24" role="img" aria-label="Linux"><title>Linux</title><path fill="currentColor" d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z"/></svg></dd></div>
           </dl>
         </div>
 
-        <figure class="wf" aria-label="Exemplo de workflow: lembrete de reunião do Outlook enviado ao WhatsApp">
+        <figure class="wf" aria-label="Exemplo de workflow: agente de IA que recebe mensagens do WhatsApp, interpreta o conteúdo, consulta leads e pacientes e devolve a resposta">
           <div class="wf-head">
-            <span>lembrete-reuniao.workflow</span>
+            <span>agente-atendimento.workflow</span>
             <span class="wf-live"><span class="dot"></span>ativo</span>
           </div>
           <svg class="wf-canvas" viewBox="0 0 440 210" role="img" aria-hidden="true">
             <path class="wf-edge" d="M90 70 H115" />
             <path class="wf-edge" d="M195 70 H220" />
             <path class="wf-edge" d="M300 70 H325" />
-            <path class="wf-edge wf-edge-alt" d="M155 98 V140 Q155 155 170 155 H220" />
-            <g class="wf-node"><rect x="10" y="42" width="80" height="56" rx="6"/><text x="21" y="66" class="t">Agenda</text><text x="21" y="84" class="s">outlook</text></g>
-            <g class="wf-node"><rect x="115" y="42" width="80" height="56" rx="6"/><text x="126" y="66" class="t">Filtro</text><text x="126" y="84" class="s">60 min antes</text></g>
-            <g class="wf-node"><rect x="220" y="42" width="80" height="56" rx="6"/><text x="231" y="66" class="t">Grupo</text><text x="231" y="84" class="s">por domínio</text></g>
-            <g class="wf-node wf-out"><rect x="325" y="42" width="105" height="56" rx="6"/><text x="337" y="66" class="t">WhatsApp</text><text x="337" y="84" class="s">envio do lembrete</text></g>
-            <g class="wf-node wf-muted"><rect x="220" y="128" width="80" height="54" rx="6"/><text x="231" y="151" class="t">Log</text><text x="231" y="169" class="s">deduplicação</text></g>
+            <path class="wf-edge wf-edge-alt" d="M155 98 V128" />
+            <path class="wf-edge wf-edge-alt" d="M260 98 V140 Q260 155 275 155 H325" />
+            <g class="wf-node"><rect x="10" y="42" width="80" height="56" rx="6"/><text x="21" y="66" class="t">Webhook</text><text x="21" y="84" class="s">z-api</text></g>
+            <g class="wf-node"><rect x="115" y="42" width="80" height="56" rx="6"/><text x="121" y="66" class="t">Interpreta</text><text x="126" y="84" class="s">multimídia</text></g>
+            <g class="wf-node wf-out"><rect x="220" y="42" width="80" height="56" rx="6"/><text x="231" y="66" class="t">Agente IA</text><text x="231" y="84" class="s">gemini</text></g>
+            <g class="wf-node wf-out"><rect x="325" y="42" width="105" height="56" rx="6"/><text x="337" y="66" class="t">WhatsApp</text><text x="337" y="84" class="s">envio final</text></g>
+            <g class="wf-node wf-muted"><rect x="115" y="128" width="80" height="54" rx="6"/><text x="126" y="151" class="t">Buffer</text><text x="126" y="169" class="s">redis 15s</text></g>
+            <g class="wf-node wf-muted"><rect x="325" y="128" width="105" height="54" rx="6"/><text x="337" y="151" class="t">Ferramentas</text><text x="337" y="169" class="s">lead · entrega</text></g>
             <circle class="wf-port" cx="90" cy="70" r="3"/><circle class="wf-port" cx="195" cy="70" r="3"/><circle class="wf-port" cx="300" cy="70" r="3"/>
             <circle class="wf-packet" r="4"><animateMotion dur="3.6s" repeatCount="indefinite" path="M50 70 H377"/></circle>
-            <circle class="wf-packet wf-packet-alt" r="3"><animateMotion dur="3.6s" begin="1.2s" repeatCount="indefinite" path="M155 98 V140 Q155 155 170 155 H260"/></circle>
+            <circle class="wf-packet wf-packet-alt" r="3"><animateMotion dur="3.6s" begin="1.2s" repeatCount="indefinite" path="M260 98 V140 Q260 155 275 155 H380"/></circle>
           </svg>
-          <pre class="wf-log"><span class="ts">09:30:00</span> trigger  agenda.outlook     12 eventos
-<span class="ts">09:30:01</span> filtro   60 min antes        3 eventos
-<span class="ts">09:30:02</span> lookup   grupo por domínio   <span class="ok">ok</span>
-<span class="ts">09:30:03</span> envio    whatsapp            <span class="ok">3/3 ✓</span><span class="caret" aria-hidden="true"></span></pre>
+          <pre class="wf-log"><span class="ts">10:12:00</span> webhook  msg.whatsapp       1 evento
+<span class="ts">10:12:01</span> buffer   agrupa partes      <span class="ok">ok</span>
+<span class="ts">10:12:03</span> lookup   lead/paciente      <span class="ok">ok</span>
+<span class="ts">10:12:04</span> agente   resposta + envio   <span class="ok">1/1 ✓</span><span class="caret" aria-hidden="true"></span></pre>
         </figure>
       </div>
 
       <div class="numbers">
         <div><strong>11 anos</strong><span>em tecnologia</span></div>
         <div><strong>7+ anos</strong><span>em implantação e sustentação</span></div>
-        <div><strong>15+</strong><span>automações construídas em n8n</span></div>
-        <div><strong>30 → 1 min</strong><span>provisionamento de clientes no Grafana</span></div>
+        <div class="metric-n8n"><strong>15+<svg viewBox="0 0 24 24" role="img" aria-label="n8n"><title>n8n</title><path fill="currentColor" d="M4.8 16.8c.45 0 .6-.15.6-.6V15c0-1.8.6-2.4 2.4-2.4H9c1.8 0 2.4.6 2.4 2.4v1.2c0 .45.15.6.6.6s.6-.15.6-.6V15c0-1.8.6-2.4 2.4-2.4h1.2c1.8 0 2.4.6 2.4 2.4v1.2c0 .45.15.6.6.6s.6-.15.6-.6V15c0-1.8.6-2.4 2.4-2.4h1.2c.45 0 .6-.15.6-.6s-.15-.6-.6-.6h-1.2c-1.8 0-2.4-.6-2.4-2.4V7.8c0-.45-.15-.6-.6-.6s-.6.15-.6.6V9c0 1.8-.6 2.4-2.4 2.4H15c-1.8 0-2.4-.6-2.4-2.4V7.8c0-.45-.15-.6-.6-.6s-.6.15-.6.6V9c0 1.8-.6 2.4-2.4 2.4H7.8c-1.8 0-2.4-.6-2.4-2.4V7.8c0-.45-.15-.6-.6-.6s-.6.15-.6.6V9c0 1.8-.6 2.4-2.4 2.4H.6c-.45 0-.6.15-.6.6s.15.6.6.6h1.2c1.8 0 2.4.6 2.4 2.4v1.2c0 .45.15.6.6.6"/></svg></strong><span>automações construídas em n8n</span></div>
+        <div><strong>2</strong><span>sistemas de gestão implantados: Bitrix24 e Asana</span></div>
       </div>
     </div>
   </section>
@@ -475,6 +514,30 @@
       <article class="feature">
         <div class="idx">01</div>
         <div>
+          <h4>Agente de IA para atendimento no WhatsApp</h4>
+          <div class="kind">Atendimento 24h · Z-API + Google Gemini · em produção</div>
+          <span class="result">cliente novo, lead e paciente ativo respondidos com dados reais do sistema</span>
+        </div>
+        <div>
+          <div class="flow"><span>webhook</span><span>valida e interpreta</span><span>buffer Redis</span><span>agente + tools</span><span>resposta Z-API</span></div>
+          <p>Agente que atende pelo WhatsApp e conduz a jornada da HG Express: capta dados de quem ainda não é cliente, acompanha leads em negociação e responde pacientes ativos consultando entregas, pagamentos e plano. Toda informação vem do banco — nada é inventado pelo modelo.</p>
+          <ul>
+            <li>Validação da origem da mensagem e bloqueio automático quando um atendente humano assume a conversa</li>
+            <li>Texto, áudio transcrito, imagem e documento analisados pelo Gemini e unificados em uma única mensagem</li>
+            <li>Buffer de 15 segundos no Redis para juntar mensagens enviadas em partes antes de responder</li>
+            <li>Identificação do número na base: cliente novo, lead em tratamento ou paciente convertido</li>
+            <li>Ferramentas para o agente: criar lead, status de entrega, status de pagamento, 2ª via e detalhes do plano</li>
+            <li>Memória da conversa no Postgres (20 interações) e regras de transbordo para o humano</li>
+            <li>Blindagem médica e farmacológica: a IA nunca orienta sobre medicamentos e aciona um especialista</li>
+            <li>Resposta final enviada pela Z-API, com divisão por blocos para mensagens longas</li>
+          </ul>
+          <div class="stack">n8n · Z-API · Google Gemini · LangChain · PostgreSQL · Redis</div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div class="idx">02</div>
+        <div>
           <h4>API de integração B2B com a NSTECH</h4>
           <div class="kind">Integração entre empresas · n8n como gateway de API</div>
           <span class="result">1 chamada cadastra cliente, filiais, produtos, usuários e quantidades</span>
@@ -494,7 +557,7 @@
       </article>
 
       <article class="feature">
-        <div class="idx">02</div>
+        <div class="idx">03</div>
         <div>
           <h4>Portal do Cliente “Raio-X”</h4>
           <div class="kind">Portal web servido pelo n8n · dados do Bitrix24</div>
@@ -514,7 +577,7 @@
       </article>
 
       <article class="feature">
-        <div class="idx">03</div>
+        <div class="idx">04</div>
         <div>
           <h4>Agente de IA no atendimento de suporte</h4>
           <div class="kind">Agente de IA (GPTMaker) integrado ao Bitrix24</div>
@@ -534,7 +597,7 @@
       </article>
 
       <article class="feature">
-        <div class="idx">04</div>
+        <div class="idx">05</div>
         <div>
           <h4>Provisionamento automático no Grafana</h4>
           <div class="kind">Self-service via formulário · API do Grafana</div>
@@ -604,7 +667,6 @@
           <li><strong>Portal de consultas operacionais</strong>Formulário que consulta viagens, notas e ocorrências direto no banco do TMS.</li>
           <li><strong>Monitor global de erros</strong>Qualquer workflow que falha dispara um e-mail com o erro para correção rápida.</li>
           <li><strong>Movimentação de etapas no CRM</strong>Webhooks que atualizam a etapa do negócio no Bitrix24 a partir de eventos externos.</li>
-          <li><strong>Captura de ID de grupos do WhatsApp</strong>Comando no próprio grupo devolve o ID para cadastro nas automações.</li>
           <li><strong>Vínculo de reuniões às tarefas</strong>A cada 10 min, grava na tarefa do Bitrix o link da reunião agendada no Outlook.</li>
         </ul>
       </div>
@@ -616,7 +678,7 @@
     <div class="wrap">
       <p class="eyebrow">Projeto próprio</p>
       <h2 class="section-title">CRMEntregas</h2>
-      <p class="section-lead">Sistema SaaS que desenvolvi de ponta a ponta para farmácias e entregas recorrentes, com desenvolvimento assistido por IA e um time de agentes com papéis definidos.</p>
+      <p class="section-lead">Sistema SaaS que desenvolvi de ponta a ponta para profissionais de coleta e entrega: gestão de pacientes e leads, criação e roteirização de rotas, comunicação com pacientes e responsáveis e gestão financeira. Desenvolvimento assistido por IA, com um time de agentes com papéis definidos.</p>
 
       <div class="project">
         <figure class="shot">
@@ -625,9 +687,9 @@
         </figure>
 
         <div>
-          <h3>Logística farmacêutica, multi-empresa</h3>
+          <h3>Gestão de rotas e pacientes, multi-empresa</h3>
           <div class="kind">Em produção</div>
-          <p>Portal administrativo, app do entregador, rastreamento público para o paciente, cobrança por PIX e boleto, roteirização com Google Maps e avisos por WhatsApp via n8n.</p>
+          <p>Cadastro de pacientes e leads, montagem e otimização de rotas no Google Maps, disparos de lembretes e avisos a pacientes e responsáveis, rastreamento público das entregas e cobrança por PIX e boleto. Inclui portal administrativo, app do profissional em campo e integração com WhatsApp via n8n.</p>
           <dl class="spec">
             <div><dt>Backend</dt><dd>NestJS 11, Prisma, PostgreSQL</dd></div>
             <div><dt>Frontend</dt><dd>React 19, Vite</dd></div>
@@ -740,6 +802,8 @@
             <li>EDI PROCEDA / TIVIT</li>
             <li>CT-e, NF-e, MDF-e, CIOT</li>
             <li>VTEX, ASAAS, Microsoft Outlook</li>
+            <li>Z-API, FaleChat</li>
+            <li>Google Services, ERPs</li>
           </ul>
         </div>
         <div>
@@ -821,6 +885,23 @@
         }, { rootMargin: '-45% 0px -50% 0px' });
         links.forEach(function (l) { var s = document.querySelector(l.getAttribute('href')); if (s) obs.observe(s); });
       }
+
+      var toggle = document.querySelector('.menu-toggle');
+      var nav = document.getElementById('nav');
+      function fecharMenu() {
+        nav.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Abrir menu');
+      }
+      toggle.addEventListener('click', function () {
+        if (toggle.getAttribute('aria-expanded') === 'true') { fecharMenu(); return; }
+        nav.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Fechar menu');
+      });
+      links.forEach(function (l) { l.addEventListener('click', fecharMenu); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecharMenu(); });
+      window.addEventListener('resize', function () { if (window.innerWidth > 640) fecharMenu(); });
     })();
 
     function copiarEmail() {

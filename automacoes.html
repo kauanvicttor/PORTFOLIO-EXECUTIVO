@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automações com n8n | Kauan Victor da Silva</title>
+  <meta name="description" content="Automações, integrações e agentes de IA construídos por Kauan Victor da Silva em n8n: arquitetura, fluxos e decisões técnicas de cada workflow." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #FAF8F4;
+      --paper-2: #F2EFE8;
+      --white: #FFFFFF;
+      --ink: #1B1B1A;
+      --ink-2: #4A4843;
+      --ink-3: #78756D;
+      --rule: #E2DED5;
+      --rule-strong: #C9C4B8;
+      --accent: #1F4E5F;
+      --accent-soft: #E6EEF0;
+      --night: #11161A;
+      --night-2: #182026;
+      --night-3: #1F2930;
+      --night-rule: rgba(255,255,255,0.09);
+      --night-ink: #ECE9E2;
+      --night-muted: #98A2A6;
+      --signal: #3DD68C;
+      --signal-ink: #0F7A4F;
+      --signal-soft: #E5F5EC;
+      --warn: #B4541A;
+      --warn-soft: #FBEDE3;
+      --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body { font-family: var(--sans); background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+    a { color: inherit; }
+    strong { font-weight: 600; }
+    code { font-family: var(--mono); font-size: 0.85em; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 3px; padding: 0.05rem 0.3rem; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Topbar */
+    .topbar { position: sticky; top: 0; z-index: 50; background: rgba(17,22,26,0.96); border-bottom: 1px solid var(--night-rule); }
+    .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 60px; }
+    .brand { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; text-decoration: none; white-space: nowrap; color: var(--night-ink); }
+    .brand span { color: var(--night-muted); font-weight: 400; }
+    .nav { display: flex; gap: 1.5rem; list-style: none; overflow-x: auto; }
+    .nav a { color: var(--night-muted); font-family: var(--mono); font-size: 0.8rem; text-decoration: none; white-space: nowrap; }
+    .nav a:hover, .nav a.active { color: var(--signal); }
+    .nav a.active::before { content: "> "; }
+    .back { font-family: var(--mono); font-size: 0.8rem; color: var(--night-ink); text-decoration: none; white-space: nowrap; border: 1px solid var(--night-rule); border-radius: 4px; padding: 0.35rem 0.7rem; }
+    .back:hover { color: var(--signal); border-color: var(--signal); }
+
+    /* Seções */
+    section { padding: 4.5rem 0; border-bottom: 1px solid var(--rule); }
+    .eyebrow { font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); margin-bottom: 0.75rem; }
+    .eyebrow::before { content: "// "; color: var(--signal-ink); }
+    .section-title { font-size: clamp(1.75rem, 3vw, 2.25rem); margin-bottom: 0.75rem; }
+    .section-lead { color: var(--ink-2); max-width: 680px; margin-bottom: 2.5rem; }
+    .alt { background: var(--paper-2); }
+
+    .grid-bg {
+      background-color: var(--night);
+      background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+      background-size: 40px 40px; background-position: -1px -1px;
+      color: var(--night-ink); border-bottom: 0;
+    }
+    .grid-bg .eyebrow { color: var(--night-muted); }
+    .grid-bg .eyebrow::before { color: var(--signal); }
+    .grid-bg .section-lead { color: #C9CDCB; }
+
+    /* Hero */
+    .hero { padding: 4.5rem 0 3.5rem; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .badge { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3rem 0.6rem; border-radius: 3px; border: 1px solid var(--night-rule); color: var(--night-ink); display: inline-flex; align-items: center; gap: 0.45rem; }
+    .badge.hl { border-color: var(--signal); color: var(--signal); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); display: inline-block; animation: blink 2.4s ease-in-out infinite; }
+    .hero h1 { font-size: clamp(2.5rem, 5.5vw, 4rem); letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    .hero .sub { font-family: var(--mono); color: var(--signal); font-size: 0.95rem; margin-bottom: 1.25rem; }
+    .hero .lead { color: #C9CDCB; font-size: 1.08rem; max-width: 720px; margin-bottom: 2rem; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center; }
+    .frame { background: var(--night-2); border: 1px solid var(--night-rule); border-radius: 8px; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); }
+    .frame-head { display: flex; gap: 0.4rem; align-items: center; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--night-rule); font-family: var(--mono); font-size: 0.72rem; color: var(--night-muted); }
+    .frame-head i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.15); display: inline-block; }
+    .frame-head span { margin-left: 0.5rem; }
+    .frame img { display: block; width: 100%; height: auto; }
+    .role-box { border-top: 1px solid var(--night-rule); }
+    .role-box div { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--night-rule); font-size: 0.9rem; }
+    .role-box dt { color: var(--night-muted); font-family: var(--mono); font-size: 0.78rem; padding-top: 0.1rem; }
+
+    .numbers { display: grid; grid-template-columns: repeat(6, 1fr); border-top: 1px solid var(--night-rule); margin-top: 3rem; }
+    .numbers div { padding: 1.25rem 1rem 0 0; }
+    .numbers div + div { padding-left: 1rem; border-left: 1px solid var(--night-rule); }
+    .numbers strong { display: block; font-family: var(--mono); font-weight: 500; font-size: 1.6rem; line-height: 1.15; color: var(--night-ink); }
+    .numbers span { font-size: 0.8rem; color: var(--night-muted); }
+
+    /* Contexto */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+    .two p { color: var(--ink-2); margin-bottom: 1rem; }
+    .callout { border-left: 3px solid var(--signal-ink); background: var(--white); padding: 1.1rem 1.25rem; font-size: 0.95rem; color: var(--ink-2); }
+    .callout strong { color: var(--ink); }
+
+    /* Pipeline (ciclo da OS) */
+    .pipeline { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; margin-top: 2.5rem; counter-reset: st; border-top: 2px solid var(--ink); }
+    .stage { position: relative; padding: 1.1rem 0.9rem 0 0; }
+    .stage + .stage { padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+    .stage::before { counter-increment: st; content: counter(st, decimal-leading-zero); display: block; font-family: var(--mono); font-size: 0.72rem; color: var(--signal-ink); margin-bottom: 0.4rem; }
+    .stage h4 { font-family: var(--sans); font-size: 0.92rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .stage p { font-size: 0.8rem; color: var(--ink-3); }
+    .stage.gate h4::after { content: "portão"; margin-left: 0.4rem; font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warn); background: var(--warn-soft); padding: 0.05rem 0.3rem; border-radius: 2px; vertical-align: middle; }
+    .status-line { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 2rem; align-items: center; }
+    .status-line .lbl { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); margin-right: 0.4rem; }
+    .status-line span.s { font-family: var(--mono); font-size: 0.72rem; background: var(--white); border: 1px solid var(--rule-strong); border-radius: 3px; padding: 0.2rem 0.5rem; }
+    .status-line span.s:not(:last-child)::after { content: " →"; color: var(--signal-ink); }
+    .status-line span.s.end { border-color: var(--signal-ink); color: var(--signal-ink); }
+
+    /* Módulos */
+    .modules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+    .mod { background: var(--white); padding: 1.5rem; transition: background 0.15s, transform 0.15s; }
+    .mod:hover { background: #FCFCFA; }
+    .mod .ic { width: 34px; height: 34px; border-radius: 6px; background: var(--signal-soft); color: var(--signal-ink); display: grid; place-items: center; margin-bottom: 0.9rem; }
+    .mod .ic svg { width: 18px; height: 18px; }
+    .mod h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .mod p { font-size: 0.87rem; color: var(--ink-2); margin-bottom: 0.75rem; }
+    .mod ul { list-style: none; }
+    .mod li { font-size: 0.82rem; color: var(--ink-2); padding-left: 1rem; position: relative; margin-bottom: 0.25rem; }
+    .mod li::before { content: "–"; position: absolute; left: 0; color: var(--ink-3); }
+
+    /* Diagramas */
+    .diagram { background: var(--night-2); border: 1px solid var(--night-rule); border-radius: 8px; overflow: hidden; }
+    .diagram-head { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--night-rule); font-family: var(--mono); font-size: 0.75rem; color: var(--night-muted); }
+    .diagram-head .live { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--signal); }
+    .diagram svg { display: block; width: 100%; height: auto; }
+    .edge { fill: none; stroke: rgba(236,233,226,0.35); stroke-width: 1.5; }
+    .edge-alt { stroke-dasharray: 4 4; }
+    .edge-veto { stroke: #E0894F; stroke-dasharray: 4 4; }
+    .node rect { fill: var(--night-3); stroke: rgba(236,233,226,0.22); stroke-width: 1; }
+    .node .t { fill: var(--night-ink); font-family: var(--sans); font-size: 13px; font-weight: 600; }
+    .node .s { fill: var(--night-muted); font-family: var(--mono); font-size: 9.5px; }
+    .node.on rect { stroke: var(--signal); }
+    .node.veto rect { stroke: #E0894F; }
+    .node.ext rect { stroke-dasharray: 3 3; }
+    .zone { fill: rgba(255,255,255,0.02); stroke: rgba(236,233,226,0.12); stroke-dasharray: 2 4; }
+    .zone-t { fill: var(--night-muted); font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .port { fill: var(--night-2); stroke: rgba(236,233,226,0.5); stroke-width: 1.2; }
+    .packet { fill: var(--signal); }
+    .packet-alt { fill: var(--night-muted); }
+    .elabel { fill: var(--night-muted); font-family: var(--mono); font-size: 9px; }
+    .elabel.v { fill: #E0894F; }
+
+    .arch-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 2.5rem; align-items: start; }
+    .spec { border-top: 2px solid var(--ink); }
+    .spec div { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); font-size: 0.88rem; }
+    .spec dt { color: var(--ink-3); font-family: var(--mono); font-size: 0.78rem; padding-top: 0.1rem; }
+
+    .req { margin-top: 3rem; }
+    .req h3 { font-family: var(--sans); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid var(--ink); padding-bottom: 0.5rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; }
+    .req h3 span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
+    .chain { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: stretch; }
+    .chain div { flex: 1 1 130px; background: var(--white); border: 1px solid var(--rule-strong); border-radius: 4px; padding: 0.7rem 0.8rem; position: relative; }
+    .chain div b { display: block; font-family: var(--mono); font-size: 0.78rem; font-weight: 500; color: var(--ink); margin-bottom: 0.2rem; }
+    .chain div small { font-size: 0.76rem; color: var(--ink-3); line-height: 1.4; display: block; }
+    .chain div:not(:last-child)::after { content: "→"; position: absolute; right: -0.85rem; top: 50%; transform: translateY(-50%); color: var(--signal-ink); font-family: var(--mono); font-size: 0.85rem; z-index: 1; }
+
+    /* Subagentes */
+    .agents-wrap { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+    .agents { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--night-rule); border: 1px solid var(--night-rule); border-radius: 6px; overflow: hidden; }
+    .agent { background: var(--night-2); padding: 1.25rem 1.1rem; display: flex; flex-direction: column; }
+    .agent .step { font-family: var(--mono); font-size: 0.7rem; color: var(--signal); margin-bottom: 0.6rem; }
+    .agent h4 { font-family: var(--mono); font-size: 0.86rem; font-weight: 500; color: var(--night-ink); margin-bottom: 0.5rem; word-break: break-word; }
+    .agent p { font-size: 0.83rem; color: #C9CDCB; margin-bottom: 0.9rem; flex: 1; }
+    .agent dl { border-top: 1px solid var(--night-rule); font-size: 0.74rem; }
+    .agent dl div { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--night-rule); }
+    .agent dt { color: var(--night-muted); font-family: var(--mono); }
+    .agent dd { color: var(--night-ink); text-align: right; }
+    .agent.veto { box-shadow: inset 0 2px 0 #E0894F; }
+    .agent.veto .step { color: #E0894F; }
+    .tagw { display: inline-block; font-family: var(--mono); font-size: 0.66rem; padding: 0.05rem 0.35rem; border-radius: 2px; }
+    .tagw.y { background: rgba(61,214,140,0.14); color: var(--signal); }
+    .tagw.n { background: rgba(255,255,255,0.07); color: var(--night-muted); }
+
+    .calib { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .calib th { text-align: left; font-family: var(--mono); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--night-muted); padding: 0 0.75rem 0.6rem 0; border-bottom: 1px solid var(--night-rule); }
+    .calib td { padding: 0.75rem 0.75rem 0.75rem 0; border-bottom: 1px solid var(--night-rule); color: #C9CDCB; vertical-align: top; }
+    .calib td:first-child { color: var(--night-ink); font-weight: 600; white-space: nowrap; }
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .principle { border-top: 1px solid var(--night-rule); padding-top: 1rem; }
+    .principle .n { font-family: var(--mono); font-size: 0.72rem; color: var(--signal); display: block; margin-bottom: 0.4rem; }
+    .principle h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--night-ink); }
+    .principle p { font-size: 0.85rem; color: var(--night-muted); }
+    .sub-h { font-family: var(--sans); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--night-ink); margin-bottom: 1rem; display: flex; justify-content: space-between; gap: 1rem; }
+    .sub-h span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--night-muted); }
+
+    /* Segurança */
+    .sec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 3rem; }
+    .sec-item { padding: 1.1rem 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 2rem 1fr; gap: 0.5rem; }
+    .sec-item .ck { font-family: var(--mono); color: var(--signal-ink); font-size: 0.85rem; padding-top: 0.05rem; }
+    .sec-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .sec-item p { font-size: 0.86rem; color: var(--ink-2); }
+
+    /* Incidentes */
+    .incidents { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 3rem; }
+    .incident { background: var(--white); border: 1px solid var(--rule-strong); border-radius: 4px; overflow: hidden; }
+    .incident header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); }
+    .incident header b { color: var(--warn); font-weight: 500; }
+    .incident .body { padding: 1.1rem 1rem 1.2rem; }
+    .incident h4 { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.25; }
+    .incident p { font-size: 0.88rem; color: var(--ink-2); margin-bottom: 0.8rem; }
+    .incident .fix { font-family: var(--mono); font-size: 0.76rem; background: var(--signal-soft); color: var(--signal-ink); padding: 0.45rem 0.6rem; border-radius: 3px; }
+    .incident .fix::before { content: "✓ "; }
+
+    .proof { width: 100%; border-collapse: collapse; margin-top: 3rem; font-size: 0.86rem; background: var(--white); border: 1px solid var(--rule); }
+    .proof th { text-align: left; font-family: var(--mono); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); padding: 0.75rem 1rem; border-bottom: 2px solid var(--ink); background: var(--paper); }
+    .proof td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: top; }
+    .proof td:first-child { font-family: var(--mono); font-size: 0.8rem; color: var(--ink); white-space: nowrap; }
+    .proof td.no { color: var(--warn); }
+
+    /* Deploy */
+    .deploy { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .dstep { border-top: 2px solid var(--ink); padding-top: 1rem; }
+    .dstep .n { font-family: var(--mono); font-size: 0.72rem; color: var(--signal-ink); display: block; margin-bottom: 0.4rem; }
+    .dstep h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .dstep p { font-size: 0.86rem; color: var(--ink-2); }
+    .version { margin-top: 3rem; display: grid; grid-template-columns: 1fr 1.4fr; gap: 3rem; align-items: center; }
+    .ver-big { font-family: var(--mono); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; letter-spacing: -0.02em; display: flex; gap: 0.15em; flex-wrap: wrap; }
+    .ver-big span { display: inline-flex; flex-direction: column; align-items: center; }
+    .ver-big small { font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 400; }
+    .ver-big i { font-style: normal; color: var(--rule-strong); }
+    .version p { color: var(--ink-2); font-size: 0.95rem; }
+
+    /* CTA */
+    .cta .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 3rem; align-items: center; }
+    .cta h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin-bottom: 0.75rem; }
+    .cta p { color: #C9CDCB; }
+    .btns { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--sans); font-size: 0.9rem; font-weight: 500; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; text-decoration: none; border: 1px solid rgba(255,255,255,0.28); background: transparent; color: var(--night-ink); }
+    .btn:hover { background: rgba(255,255,255,0.06); border-color: var(--night-ink); }
+    .btn-solid { background: var(--signal); border-color: var(--signal); color: #0B1A12; }
+    .btn-solid:hover { background: #5BE3A0; border-color: #5BE3A0; color: #0B1A12; }
+    .cta .footer { grid-column: 1 / -1; }
+    .footer { margin-top: 3rem; font-size: 0.8rem; color: #A8A498; border-top: 1px solid var(--night-rule); padding-top: 1.25rem; }
+
+    /* Revelação ao rolar */
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) {
+      .dot { animation: none; }
+      .packet, .packet-alt { display: none; }
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid, .two, .arch-grid, .cta .wrap, .version { grid-template-columns: 1fr; gap: 2.5rem; }
+      .numbers { grid-template-columns: repeat(3, 1fr); }
+      .numbers div:nth-child(4) { padding-left: 0; border-left: 0; }
+      .numbers div { padding-bottom: 1.25rem; }
+      .pipeline { grid-template-columns: repeat(4, 1fr); row-gap: 1.5rem; }
+      .stage:nth-child(5) { padding-left: 0; border-left: 0; }
+      .modules { grid-template-columns: 1fr 1fr; }
+      .agents { grid-template-columns: 1fr 1fr; }
+      .principles, .deploy { grid-template-columns: 1fr 1fr; }
+      .btns { justify-content: flex-start; }
+      .nav { display: none; }
+    }
+    @media (max-width: 640px) {
+      section { padding: 3.25rem 0; }
+      .brand span { display: none; }
+      .numbers { grid-template-columns: 1fr 1fr; }
+      .numbers div:nth-child(4) { padding-left: 1rem; border-left: 1px solid var(--night-rule); }
+      .numbers div:nth-child(odd) { padding-left: 0; border-left: 0; }
+      .pipeline { grid-template-columns: 1fr 1fr; }
+      .stage:nth-child(odd) { padding-left: 0; border-left: 0; }
+      .stage:nth-child(5) { padding-left: 0; }
+      .stage:nth-child(even) { padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+      .modules, .agents, .principles, .deploy, .sec-grid, .incidents { grid-template-columns: 1fr; }
+      .role-box div, .spec div { grid-template-columns: 1fr; gap: 0.1rem; }
+      .chain div:not(:last-child)::after { display: none; }
+      .calib { font-size: 0.8rem; }
+      .proof { font-size: 0.78rem; }
+      .proof th, .proof td { padding: 0.6rem; }
+      .proof td:first-child { white-space: normal; }
+    }
+  
+    .hub { background: var(--night-2); border: 1px solid var(--night-rule); border-radius: 8px; overflow: hidden; }
+    .patterns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem 2.5rem; }
+    .pattern { border-top: 1px solid var(--rule-strong); padding-top: 1rem; }
+    .pattern .n { font-family: var(--mono); font-size: 0.72rem; color: var(--signal-ink); display: block; margin-bottom: 0.4rem; }
+    .pattern h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .pattern p { font-size: 0.87rem; color: var(--ink-2); }
+
+    .toc { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 2.5rem; }
+    .toc a { font-family: var(--mono); font-size: 0.74rem; text-decoration: none; color: var(--ink-2); background: var(--white); border: 1px solid var(--rule-strong); border-radius: 3px; padding: 0.3rem 0.6rem; }
+    .toc a:hover { border-color: var(--signal-ink); color: var(--signal-ink); }
+    .toc a span { color: var(--signal-ink); margin-right: 0.35rem; }
+
+    .case { padding: 2.75rem 0; border-top: 1px solid var(--rule); }
+    .case:first-of-type { border-top: 2px solid var(--ink); }
+    .case-head { display: grid; grid-template-columns: 3rem 1fr auto; gap: 0 1.5rem; align-items: start; margin-bottom: 1.5rem; }
+    .case-idx { font-family: var(--mono); font-size: 0.85rem; color: var(--signal-ink); padding-top: 1.55rem; }
+    .case-cat { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--signal-ink); }
+    .case-cat::before { content: "● "; color: var(--signal); }
+    .case h3 { font-size: 1.6rem; margin: 0.2rem 0 0.35rem; }
+    .case-kind { font-size: 0.86rem; color: var(--ink-3); }
+    .case-kind b { font-family: var(--mono); font-weight: 500; font-size: 0.78rem; color: var(--ink-2); }
+    .result { display: inline-block; background: var(--signal-soft); color: var(--signal-ink); font-family: var(--mono); font-size: 0.76rem; padding: 0.4rem 0.65rem; border-radius: 3px; max-width: 280px; margin-top: 1.5rem; }
+    .result::before { content: "✓ "; }
+    .flowbox .scroll { overflow-x: auto; padding: 0.5rem 0.5rem 0.25rem; }
+    .flowbox svg { display: block; width: 100%; height: auto; }
+    .case-body { display: grid; grid-template-columns: 1fr 1.25fr; gap: 2.5rem; margin-top: 1.5rem; }
+    .case-body p { color: var(--ink-2); font-size: 0.96rem; }
+    .case-body ul { list-style: none; margin-bottom: 1rem; }
+    .case-body li { font-size: 0.9rem; color: var(--ink-2); padding-left: 1rem; position: relative; margin-bottom: 0.4rem; }
+    .case-body li::before { content: "–"; position: absolute; left: 0; color: var(--ink-3); }
+    .stack { font-family: var(--mono); font-size: 0.76rem; color: var(--ink-3); }
+
+    .minis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+    .mini { background: var(--white); padding: 1.4rem; display: flex; flex-direction: column; }
+    .mini .tag { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--signal-ink); margin-bottom: 0.5rem; }
+    .mini .tag::before { content: "● "; color: var(--signal); }
+    .mini h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .mini .meta { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); margin-bottom: 0.7rem; }
+    .mini p { font-size: 0.86rem; color: var(--ink-2); margin-bottom: 1rem; flex: 1; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+    .flow span { font-family: var(--mono); font-size: 0.68rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule-strong); border-radius: 3px; padding: 0.15rem 0.45rem; }
+    .flow span:not(:last-child)::after { content: " →"; color: var(--signal-ink); }
+
+    .toolbars { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+    .bar-row { display: grid; grid-template-columns: 9.5rem 1fr 3rem; gap: 0.75rem; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--night-rule); font-size: 0.84rem; }
+    .bar-row span:first-child { font-family: var(--mono); font-size: 0.78rem; color: var(--night-ink); }
+    .bar-row i { display: block; height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--signal), rgba(61,214,140,0.35)); }
+    .bar-row b { font-family: var(--mono); font-weight: 500; color: var(--night-muted); text-align: right; font-size: 0.78rem; }
+    .toolbars p:not(.eyebrow) { color: #C9CDCB; font-size: 0.95rem; margin-bottom: 1rem; }
+
+    @media (max-width: 960px) {
+      .patterns, .minis { grid-template-columns: 1fr 1fr; }
+      .case-body, .toolbars { grid-template-columns: 1fr; gap: 1.5rem; }
+      .case-head { grid-template-columns: 2.5rem 1fr; }
+      .case-head .result { grid-column: 2; margin-top: 0.75rem; max-width: none; }
+    }
+    @media (max-width: 640px) {
+      .patterns, .minis { grid-template-columns: 1fr; }
+      .case-head { grid-template-columns: 1fr; }
+      .case-idx { padding: 0 0 0.3rem; }
+      .case-head .result { grid-column: 1; }
+      .bar-row { grid-template-columns: 7.5rem 1fr 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a href="index.html" class="brand">Kauan Silva<span> · Automações n8n</span></a>
+      <ul class="nav" id="nav">
+        <li><a href="#padroes">Padrões</a></li>
+        <li><a href="#principais">Principais</a></li>
+        <li><a href="#rotina">Rotina</a></li>
+        <li><a href="#numeros">Números</a></li>
+      </ul>
+      <a href="index.html#automacoes" class="back">← portfólio</a>
+    </div>
+  </header>
+
+  <section id="topo" class="hero grid-bg">
+    <div class="wrap">
+      <div class="badges">
+        <span class="badge hl">n8n · integrações · agentes de IA</span>
+        <span class="badge"><span class="dot"></span>em produção</span>
+        <span class="badge">2023 – 2026</span>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <h1>Automações com n8n</h1>
+          <p class="sub">APIs, ETL, portais e agentes de IA ligados à operação</p>
+          <p class="lead">Os workflows que desenhei e mantenho em n8n, descritos a partir dos próprios arquivos exportados: o que cada um resolve, como os dados andam de um sistema para outro e as decisões técnicas por trás. Do atendimento por WhatsApp com IA à API entre empresas e ao pipeline de dados para o Grafana.</p>
+          <dl class="role-box">
+            <div><dt>onde</dt><dd>ActiveCorp (TMS ActiveTrans, Bitrix24, Grafana), Niky Benefícios e projetos freelancer</dd></div>
+            <div><dt>meu papel</dt><dd>Levantamento com a área, desenho do fluxo, desenvolvimento, testes em homologação, documentação e sustentação</dd></div>
+            <div><dt>linguagens</dt><dd>JavaScript nos nós de código, SQL (SQL Server e PostgreSQL), HTML/CSS nos portais</dd></div>
+          </dl>
+        </div>
+        <figure class="hub" aria-label="Mapa de integrações: o n8n no centro conectado a Bitrix24, Outlook, WhatsApp, Gemini, GPTMaker, Redis, SQL Server, Supabase, Grafana, API EAD, ERPs e e-mail">
+          <div class="diagram-head"><span>mapa-de-integracoes</span><span class="live"><span class="dot"></span>12 sistemas</span></div>
+          <svg viewBox="0 0 520 350" role="img" aria-hidden="true"><path class="edge edge-alt" d="M260 175 L260 35"/><path class="edge edge-alt" d="M260 175 L352 54"/><path class="edge edge-alt" d="M260 175 L420 105"/><path class="edge edge-alt" d="M260 175 L445 175"/><path class="edge edge-alt" d="M260 175 L420 245"/><path class="edge edge-alt" d="M260 175 L352 296"/><path class="edge edge-alt" d="M260 175 L260 315"/><path class="edge edge-alt" d="M260 175 L168 296"/><path class="edge edge-alt" d="M260 175 L100 245"/><path class="edge edge-alt" d="M260 175 L75 175"/><path class="edge edge-alt" d="M260 175 L100 105"/><path class="edge edge-alt" d="M260 175 L168 54"/><circle class="packet" r="3"><animateMotion dur="2.6s" begin="0.00s" repeatCount="indefinite" path="M260 35 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="3.1s" begin="0.35s" repeatCount="indefinite" path="M352 54 L260 175"/></circle><circle class="packet" r="3"><animateMotion dur="3.6s" begin="0.70s" repeatCount="indefinite" path="M420 105 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="4.1s" begin="1.05s" repeatCount="indefinite" path="M445 175 L260 175"/></circle><circle class="packet" r="3"><animateMotion dur="2.6s" begin="1.40s" repeatCount="indefinite" path="M420 245 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="3.1s" begin="1.75s" repeatCount="indefinite" path="M352 296 L260 175"/></circle><circle class="packet" r="3"><animateMotion dur="3.6s" begin="2.10s" repeatCount="indefinite" path="M260 315 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="4.1s" begin="2.45s" repeatCount="indefinite" path="M168 296 L260 175"/></circle><circle class="packet" r="3"><animateMotion dur="2.6s" begin="2.80s" repeatCount="indefinite" path="M100 245 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="3.1s" begin="3.15s" repeatCount="indefinite" path="M75 175 L260 175"/></circle><circle class="packet" r="3"><animateMotion dur="3.6s" begin="3.50s" repeatCount="indefinite" path="M100 105 L260 175"/></circle><circle class="packet packet-alt" r="3"><animateMotion dur="4.1s" begin="3.85s" repeatCount="indefinite" path="M168 54 L260 175"/></circle><g class="node ext"><rect x="218" y="18" width="84" height="34" rx="6"/><text x="260" y="33" class="t" text-anchor="middle" style="font-size:11px">Bitrix24</text><text x="260" y="46" class="s" text-anchor="middle" style="font-size:8.5px">crm · tarefas</text></g><g class="node ext"><rect x="310" y="37" width="84" height="34" rx="6"/><text x="352" y="52" class="t" text-anchor="middle" style="font-size:11px">Outlook</text><text x="352" y="65" class="s" text-anchor="middle" style="font-size:8.5px">agendas</text></g><g class="node ext"><rect x="378" y="88" width="84" height="34" rx="6"/><text x="420" y="103" class="t" text-anchor="middle" style="font-size:11px">WhatsApp</text><text x="420" y="116" class="s" text-anchor="middle" style="font-size:8.5px">z-api</text></g><g class="node ext"><rect x="403" y="158" width="84" height="34" rx="6"/><text x="445" y="173" class="t" text-anchor="middle" style="font-size:11px">Gemini</text><text x="445" y="186" class="s" text-anchor="middle" style="font-size:8.5px">ia</text></g><g class="node ext"><rect x="378" y="228" width="84" height="34" rx="6"/><text x="420" y="243" class="t" text-anchor="middle" style="font-size:11px">GPTMaker</text><text x="420" y="256" class="s" text-anchor="middle" style="font-size:8.5px">agente</text></g><g class="node ext"><rect x="310" y="279" width="84" height="34" rx="6"/><text x="352" y="294" class="t" text-anchor="middle" style="font-size:11px">Redis</text><text x="352" y="307" class="s" text-anchor="middle" style="font-size:8.5px">buffer</text></g><g class="node ext"><rect x="218" y="298" width="84" height="34" rx="6"/><text x="260" y="313" class="t" text-anchor="middle" style="font-size:11px">SQL Server</text><text x="260" y="326" class="s" text-anchor="middle" style="font-size:8.5px">tms · erp</text></g><g class="node ext"><rect x="126" y="279" width="84" height="34" rx="6"/><text x="168" y="294" class="t" text-anchor="middle" style="font-size:11px">Supabase</text><text x="168" y="307" class="s" text-anchor="middle" style="font-size:8.5px">postgres</text></g><g class="node ext"><rect x="58" y="228" width="84" height="34" rx="6"/><text x="100" y="243" class="t" text-anchor="middle" style="font-size:11px">Grafana</text><text x="100" y="256" class="s" text-anchor="middle" style="font-size:8.5px">dashboards</text></g><g class="node ext"><rect x="33" y="158" width="84" height="34" rx="6"/><text x="75" y="173" class="t" text-anchor="middle" style="font-size:11px">API EAD</text><text x="75" y="186" class="s" text-anchor="middle" style="font-size:8.5px">cursos</text></g><g class="node ext"><rect x="58" y="88" width="84" height="34" rx="6"/><text x="100" y="103" class="t" text-anchor="middle" style="font-size:11px">ERPs</text><text x="100" y="116" class="s" text-anchor="middle" style="font-size:8.5px">ct-e · nf-e</text></g><g class="node ext"><rect x="126" y="37" width="84" height="34" rx="6"/><text x="168" y="52" class="t" text-anchor="middle" style="font-size:11px">E-mail</text><text x="168" y="65" class="s" text-anchor="middle" style="font-size:8.5px">imap · smtp</text></g><g class="node on"><rect x="212" y="145" width="96" height="60" rx="8"/><text x="260" y="177" class="t" text-anchor="middle" style="font-size:18px">n8n</text><text x="260" y="194" class="s" text-anchor="middle">orquestrador</text></g></svg>
+        </figure>
+      </div>
+      <div class="numbers">
+        <div><strong>27</strong><span>workflows descritos</span></div>
+        <div><strong>~680</strong><span>nós no total</span></div>
+        <div><strong>125</strong><span>nós de código JavaScript</span></div>
+        <div><strong>12</strong><span>sistemas integrados</span></div>
+        <div><strong>6</strong><span>endpoints de API publicados</span></div>
+        <div><strong>~1 min</strong><span>para provisionar um cliente no Grafana</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="padroes" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">Como eu construo</p>
+      <h2 class="section-title">Padrões que se repetem em todos os fluxos</h2>
+      <p class="section-lead">Automação que roda sozinha precisa falhar de forma visível, não repetir o que já fez e respeitar os limites dos sistemas com que conversa. Estes padrões aparecem nos workflows abaixo.</p>
+      <div class="patterns reveal">
+        <div class="pattern"><span class="n">01</span><h4>Homologação e produção</h4><p>Webhooks separados para cada ambiente no mesmo desenho, ou versões Homol do workflow, para testar sem tocar no que está em uso.</p></div><div class="pattern"><span class="n">02</span><h4>Monitor global de erros</h4><p>Todo workflow aponta para um fluxo de erro que avisa por e-mail com o nó e a mensagem que falharam.</p></div><div class="pattern"><span class="n">03</span><h4>Idempotência</h4><p>IDs únicos, flags de enviado e checagem de “já processado” em Data Tables evitam mensagem, cadastro ou baixa duplicados.</p></div><div class="pattern"><span class="n">04</span><h4>Respeito a limites</h4><p>Paginação com espera entre chamadas nas APIs e envio de WhatsApp um a um, com intervalo variável, para não ser bloqueado.</p></div><div class="pattern"><span class="n">05</span><h4>Portais no próprio n8n</h4><p>Webhook GET devolve o HTML, POST processa: login, formulários e dashboards sem servidor web à parte.</p></div><div class="pattern"><span class="n">06</span><h4>Modular e rastreável</h4><p>Sub-workflows reutilizáveis por entidade, correlationId de ponta a ponta e logs em CSV enviados diariamente.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="principais">
+    <div class="wrap">
+      <p class="eyebrow">Principais automações</p>
+      <h2 class="section-title">Oito fluxos em detalhe</h2>
+      <p class="section-lead">Cada diagrama segue o caminho real do workflow: a linha de cima é o fluxo principal e as linhas tracejadas são ramificações, rotinas agendadas e ferramentas.</p>
+      <nav class="toc" aria-label="Automações nesta página"><a href="#agente-whatsapp"><span>01</span>Agente de IA para atendimento no Whats…</a><a href="#api-nstech"><span>02</span>API de integração B2B com a NSTECH</a><a href="#raio-x"><span>03</span>Portal do Cliente “Raio-X”</a><a href="#outlook-whatsapp"><span>04</span>Lembretes de reunião Outlook</a><a href="#etl-bitrix"><span>05</span>Pipeline Bitrix24</a><a href="#grafana"><span>06</span>Provisionamento automático no Grafana</a><a href="#gptmaker"><span>07</span>Agente de IA no suporte com Bitrix24</a><a href="#ead"><span>08</span>Plataforma EAD automatizada</a></nav>
+      
+      <article class="case reveal" id="agente-whatsapp">
+        <header class="case-head">
+          <div class="case-idx">01</div>
+          <div>
+            <span class="case-cat">Agente de IA</span>
+            <h3>Agente de IA para atendimento no WhatsApp</h3>
+            <div class="case-kind">HG Express · Z-API + Google Gemini · em produção <b>· 56 nós</b></div>
+          </div>
+          <span class="result">cliente novo, lead e paciente ativo atendidos com dados reais do sistema</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>agente-atendimento.workflow</span><span class="live"><span class="dot"></span>10 etapas</span></div><div class="scroll"><svg viewBox="0 0 1146 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge" d="M848 45.0 H874"/><path class="edge edge-alt" d="M789.0 70 V116"/><text class="elabel" x="795.0" y="108">tools</text><path class="edge edge-alt" d="M848 141.0 H874"/><path class="edge edge-alt" d="M992 141.0 H1018"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Webhook</text><text x="21" y="57" class="s">z-api</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Validações</text><text x="165" y="57" class="s">origem · humano</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Tipo de mídia</text><text x="309" y="57" class="s">texto · áudio · doc</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Gemini</text><text x="453" y="57" class="s">transcreve · lê</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Buffer Redis</text><text x="597" y="57" class="s">espera 15 s</text></g><g class="node on"><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Agente IA</text><text x="741" y="57" class="s">gemini + tools</text></g><g class="node on"><rect x="874" y="20" width="118" height="50" rx="6"/><text x="885" y="41" class="t">WhatsApp</text><text x="885" y="57" class="s">envio em blocos</text></g><g class="node  ext"><rect x="730" y="116" width="118" height="50" rx="6"/><text x="741" y="137" class="t">Memória</text><text x="741" y="153" class="s">postgres · 20</text></g><g class="node  ext"><rect x="874" y="116" width="118" height="50" rx="6"/><text x="885" y="137" class="t">Ferramentas</text><text x="885" y="153" class="s">lead · entrega</text></g><g class="node  ext"><rect x="1018" y="116" width="118" height="50" rx="6"/><text x="1029" y="137" class="t">2ª via</text><text x="1029" y="153" class="s">pagamento · plano</text></g><circle class="packet" r="4"><animateMotion dur="4.9s" repeatCount="indefinite" path="M69.0 45.0 H933.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>Agente que conduz a jornada de quem fala com a empresa pelo WhatsApp: capta dados de quem ainda não é cliente, acompanha leads em negociação e responde pacientes ativos consultando entregas, pagamentos e plano direto no banco.</p>
+          <div><ul><li>Valida a origem e bloqueia o agente automaticamente quando um atendente humano assume a conversa</li><li>Texto, áudio transcrito, imagem e documento analisados pelo Gemini e unificados em uma única mensagem</li><li>Buffer de 15 segundos no Redis junta mensagens enviadas em partes antes de responder</li><li>Identifica o número na base: cliente novo, lead em tratamento ou paciente convertido</li><li>Cinco ferramentas SQL para o agente: criar lead, status de entrega, status de pagamento, 2ª via e plano</li><li>Blindagem médica: a IA nunca orienta sobre medicamentos e aciona um especialista humano</li></ul><div class="stack">n8n · Z-API · Google Gemini · LangChain Agent · PostgreSQL · Redis</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="api-nstech">
+        <header class="case-head">
+          <div class="case-idx">02</div>
+          <div>
+            <span class="case-cat">Integração B2B</span>
+            <h3>API de integração B2B com a NSTECH</h3>
+            <div class="case-kind">n8n como gateway de API · 13 workflows <b>· 6 endpoints</b></div>
+          </div>
+          <span class="result">1 chamada cadastra cliente, filiais, produtos, usuários e quantidades</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>nstech-api.workflow</span><span class="live"><span class="dot"></span>11 etapas</span></div><div class="scroll"><svg viewBox="0 0 1002 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge" d="M848 45.0 H874"/><path class="edge edge-alt" d="M357.0 70 V116"/><text class="elabel" x="363.0" y="108">rastreio</text><path class="edge edge-alt" d="M272 141.0 H298"/><path class="edge edge-alt" d="M501.0 70 V116"/><text class="elabel" x="507.0" y="108">roteia</text><path class="edge edge-alt" d="M560 141.0 H586"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">POST /clientes</text><text x="21" y="57" class="s">webhook</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Segurança</text><text x="165" y="57" class="s">token · ip</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Envelope</text><text x="309" y="57" class="s">valida schema</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Sub-workflow</text><text x="453" y="57" class="s">por produto</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Entidades</text><text x="597" y="57" class="s">produto · usuário</text></g><g class="node "><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Libera Active</text><text x="741" y="57" class="s">sql server</text></g><g class="node on"><rect x="874" y="20" width="118" height="50" rx="6"/><text x="885" y="41" class="t">Resposta</text><text x="885" y="57" class="s">por item</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">Log</text><text x="309" y="153" class="s">correlationId</text></g><g class="node  ext"><rect x="154" y="116" width="118" height="50" rx="6"/><text x="165" y="137" class="t">GET /log</text><text x="165" y="153" class="s">consulta</text></g><g class="node  ext"><rect x="442" y="116" width="118" height="50" rx="6"/><text x="453" y="137" class="t">TudoEntregue</text><text x="453" y="153" class="s">api rest</text></g><g class="node  ext"><rect x="586" y="116" width="118" height="50" rx="6"/><text x="597" y="137" class="t">OnSupply</text><text x="597" y="153" class="s">cadastro</text></g><circle class="packet" r="4"><animateMotion dur="4.9s" repeatCount="indefinite" path="M69.0 45.0 H933.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>API REST que recebe da NSTECH os cadastros de clientes e distribui cada item para o produto Active correto (TudoEntregue ou OnSupply), devolvendo o resultado item a item na mesma requisição.</p>
+          <div><ul><li>6 endpoints: 4 POST de upsert (clientes, produtos, usuários, quantidades) e 2 GET (contratado × utilizado e log)</li><li>6 workflows de API + 7 sub-workflows reutilizáveis por produto e por entidade</li><li>Ambientes de homologação (mock) e produção no mesmo desenho, com Bearer Token e allowlist de IP</li><li>Rastreio ponta a ponta por correlationId, com log de entrada, saída e recusa</li><li>Erro por item sem rejeitar o lote inteiro; liberação automática do cliente no sistema Active</li><li>Contrato documentado em OpenAPI 3.1, coleção Insomnia e script de testes</li></ul><div class="stack">n8n · REST · OpenAPI 3.1 · SQL Server · Data Tables · Insomnia</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="raio-x">
+        <header class="case-head">
+          <div class="case-idx">03</div>
+          <div>
+            <span class="case-cat">Portal</span>
+            <h3>Portal do Cliente “Raio-X”</h3>
+            <div class="case-kind">Portal web servido pelo n8n · dados do Bitrix24 <b>· 72 nós</b></div>
+          </div>
+          <span class="result">o cliente acompanha a própria implantação sem depender de e-mail</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>portal-raio-x.workflow</span><span class="live"><span class="dot"></span>11 etapas</span></div><div class="scroll"><svg viewBox="0 0 1146 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge edge-alt" d="M789.0 70 V116"/><text class="elabel" x="795.0" y="108">ações do cliente</text><path class="edge edge-alt" d="M848 141.0 H874"/><path class="edge edge-alt" d="M992 141.0 H1018"/><path class="edge edge-alt" d="M357.0 70 V116"/><text class="elabel" x="363.0" y="108">agenda</text><path class="edge edge-alt" d="M416 141.0 H442"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">GET /portal</text><text x="21" y="57" class="s">tela de login</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">POST login</text><text x="165" y="57" class="s">cnpj + senha</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Bitrix24</text><text x="309" y="57" class="s">tarefas + grupo</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Regras</text><text x="453" y="57" class="s">tags · etapas</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">JS</text><text x="597" y="57" class="s">progresso</text></g><g class="node on"><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">HTML</text><text x="741" y="57" class="s">dashboard</text></g><g class="node  ext"><rect x="730" y="116" width="118" height="50" rx="6"/><text x="741" y="137" class="t">Ciência</text><text x="741" y="153" class="s">aceite</text></g><g class="node  ext"><rect x="874" y="116" width="118" height="50" rx="6"/><text x="885" y="137" class="t">Avaliação</text><text x="885" y="153" class="s">treinamento</text></g><g class="node  ext"><rect x="1018" y="116" width="118" height="50" rx="6"/><text x="1029" y="137" class="t">Bitrix24</text><text x="1029" y="153" class="s">grava na tarefa</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">Cron 10 min</text><text x="309" y="153" class="s">outlook</text></g><g class="node  ext"><rect x="442" y="116" width="118" height="50" rx="6"/><text x="453" y="137" class="t">Link Teams</text><text x="453" y="153" class="s">na tarefa</text></g><circle class="packet" r="4"><animateMotion dur="4.2s" repeatCount="indefinite" path="M69.0 45.0 H789.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>Portal em que o cliente entra com CNPJ e senha e vê, em tempo real, o andamento do projeto de implantação lido direto das tarefas do Bitrix24. O próprio n8n serve o HTML, autentica e responde às ações do cliente.</p>
+          <div><ul><li>Linha do tempo com 5 etapas (início, planejamento, implantação, go-live e passagem de bastão)</li><li>Barras de progresso geral e de configurações, árvore de tarefas em 3 níveis</li><li>Banner de pendências do cliente e calendário de reuniões com link do Teams</li><li>Cliente registra ciência, aceite e avaliação do treinamento, gravados na tarefa do Bitrix</li><li>Regras por tags (responsável, ocultar, desativar, pendência do cliente) documentadas em guia para o time</li><li>Webhook de novos projetos fixa as datas das tarefas automaticamente</li></ul><div class="stack">n8n · JavaScript · HTML/CSS · Bitrix24 REST · Microsoft Outlook</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="outlook-whatsapp">
+        <header class="case-head">
+          <div class="case-idx">04</div>
+          <div>
+            <span class="case-cat">Comunicação</span>
+            <h3>Lembretes de reunião Outlook → WhatsApp</h3>
+            <div class="case-kind">Agendas dos consultores → grupos de WhatsApp dos clientes <b>· 90 nós</b></div>
+          </div>
+          <span class="result">cliente avisado antes de cada reunião, sem mensagem duplicada</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>lembretes-reuniao.workflow</span><span class="live"><span class="dot"></span>11 etapas</span></div><div class="scroll"><svg viewBox="0 0 1002 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge" d="M848 45.0 H874"/><path class="edge edge-alt" d="M501.0 70 V116"/><text class="elabel" x="507.0" y="108">vínculos</text><path class="edge edge-alt" d="M416 141.0 H442"/><path class="edge edge-alt" d="M645.0 70 V116"/><text class="elabel" x="651.0" y="108">rotinas</text><path class="edge edge-alt" d="M704 141.0 H730"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Cron 30 min</text><text x="21" y="57" class="s">gatilho</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Outlook</text><text x="165" y="57" class="s">loop por agenda</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Janela 60 min</text><text x="309" y="57" class="s">filtro · utc</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Lookup</text><text x="453" y="57" class="s">domínio · e-mail</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Deduplica</text><text x="597" y="57" class="s">unique_id</text></g><g class="node "><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Mensagem</text><text x="741" y="57" class="s">template variado</text></g><g class="node on"><rect x="874" y="20" width="118" height="50" rx="6"/><text x="885" y="41" class="t">WhatsApp</text><text x="885" y="57" class="s">espera 20–60 s</text></g><g class="node  ext"><rect x="442" y="116" width="118" height="50" rx="6"/><text x="453" y="137" class="t">Formulário</text><text x="453" y="153" class="s">cadastro de grupos</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">CRUD</text><text x="309" y="153" class="s">insere · altera</text></g><g class="node  ext"><rect x="586" y="116" width="118" height="50" rx="6"/><text x="597" y="137" class="t">Limpeza</text><text x="597" y="153" class="s">17h50 · 22h</text></g><g class="node  ext"><rect x="730" y="116" width="118" height="50" rx="6"/><text x="741" y="137" class="t">18h</text><text x="741" y="153" class="s">reuniões amanhã</text></g><circle class="packet" r="4"><animateMotion dur="4.9s" repeatCount="indefinite" path="M69.0 45.0 H933.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>A cada 30 minutos o fluxo varre a agenda de cada consultor no Outlook, encontra as reuniões da próxima hora, descobre o grupo de WhatsApp do cliente e envia o lembrete com cadência humana para não ser bloqueado.</p>
+          <div><ul><li>Loop individual por consultor contorna a limitação de leitura de calendários compartilhados</li><li>Filtro temporal com padronização de fuso (UTC) e enriquecimento dos dados do evento</li><li>Busca do grupo em paralelo por domínio e por e-mail do cliente, com descarte de quem não tem grupo</li><li>Controle de envio por unique_id e limpeza diária do log para não repetir lembretes</li><li>Disparo de 1 em 1 com templates aleatórios e espera variável, simulando comportamento humano</li><li>Formulário web com inserção, edição, exclusão e consulta dos vínculos cliente ↔ grupo</li></ul><div class="stack">n8n · Microsoft Outlook · Data Tables · Google Sheets · API WhatsApp</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="etl-bitrix">
+        <header class="case-head">
+          <div class="case-idx">05</div>
+          <div>
+            <span class="case-cat">Dados</span>
+            <h3>Pipeline Bitrix24 → Supabase → Grafana</h3>
+            <div class="case-kind">ETL com carga histórica e incremental <b>· 69 nós</b></div>
+          </div>
+          <span class="result">11.038 tarefas e 398 projetos na primeira carga, atualizados a cada 20 min</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>etl-bitrix-supabase.workflow</span><span class="live"><span class="dot"></span>9 etapas</span></div><div class="scroll"><svg viewBox="0 0 858 186" style="min-width:618px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge edge-alt" d="M213.0 70 V116"/><text class="elabel" x="219.0" y="108">diário</text><path class="edge edge-alt" d="M272 141.0 H298"/><path class="edge edge-alt" d="M416 141.0 H442"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Cron 20 min</text><text x="21" y="57" class="s">incremental</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Bitrix24</text><text x="165" y="57" class="s">api paginada</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Rate limit</text><text x="309" y="57" class="s">wait</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">JS</text><text x="453" y="57" class="s">trata em lote</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Supabase</text><text x="597" y="57" class="s">upsert em lote</text></g><g class="node on"><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Grafana</text><text x="741" y="57" class="s">dashboards</text></g><g class="node  ext"><rect x="154" y="116" width="118" height="50" rx="6"/><text x="165" y="137" class="t">Cron 03h</text><text x="165" y="153" class="s">conciliação</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">IDs ativos</text><text x="309" y="153" class="s">bitrix</text></g><g class="node  ext"><rect x="442" y="116" width="118" height="50" rx="6"/><text x="453" y="137" class="t">is_deleted</text><text x="453" y="153" class="s">marca excluídos</text></g><circle class="packet" r="4"><animateMotion dur="4.2s" repeatCount="indefinite" path="M69.0 45.0 H789.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>ETL que alimenta um banco PostgreSQL com tarefas, projetos, usuários e horas lançadas no Bitrix24, para que a gestão acompanhe a operação em dashboards no Grafana.</p>
+          <div><ul><li>Extração de tasks.task.list, sonet_group.get, usuários e task.elapseditem.getlist</li><li>Paginação por último ID com espera entre chamadas para respeitar o limite da API</li><li>Modelagem com tabelas bx_* (payload bruto em JSONB + colunas tratadas) e controle de sincronização</li><li>Carga histórica em lote e incremental a cada 20 min; tags sincronizadas às 2h</li><li>Conciliação diária marca como excluído o que sumiu do Bitrix, para os painéis filtrarem</li></ul><div class="stack">n8n · Bitrix24 REST · Supabase / PostgreSQL · Grafana</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="grafana">
+        <header class="case-head">
+          <div class="case-idx">06</div>
+          <div>
+            <span class="case-cat">Provisionamento</span>
+            <h3>Provisionamento automático no Grafana</h3>
+            <div class="case-kind">Self-service via formulário · Grafana HTTP API <b>· 46 nós</b></div>
+          </div>
+          <span class="result">de 30+ minutos manuais para cerca de 1 minuto</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>provisiona-grafana.workflow</span><span class="live"><span class="dot"></span>9 etapas</span></div><div class="scroll"><svg viewBox="0 0 1002 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge" d="M848 45.0 H874"/><path class="edge edge-alt" d="M357.0 70 V116"/><text class="elabel" x="363.0" y="108">usuário</text><path class="edge edge-alt" d="M416 141.0 H442"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Formulário</text><text x="21" y="57" class="s">html via n8n</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Organização</text><text x="165" y="57" class="s">cria + padrões</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Usuário</text><text x="309" y="57" class="s">token + chave</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Pasta</text><text x="453" y="57" class="s">permissões</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Fonte de dados</text><text x="597" y="57" class="s">sql server</text></g><g class="node "><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Dashboards</text><text x="741" y="57" class="s">adapta json</text></g><g class="node on"><rect x="874" y="20" width="118" height="50" rx="6"/><text x="885" y="41" class="t">E-mail</text><text x="885" y="57" class="s">acessos</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">Já existe?</text><text x="309" y="153" class="s">consulta</text></g><g class="node  ext"><rect x="442" y="116" width="118" height="50" rx="6"/><text x="453" y="137" class="t">Vincula</text><text x="453" y="153" class="s">à organização</text></g><circle class="packet" r="4"><animateMotion dur="4.9s" repeatCount="indefinite" path="M69.0 45.0 H933.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>Um formulário dispara a criação completa do ambiente de dashboards de um novo cliente, sem ninguém clicar no Grafana.</p>
+          <div><ul><li>Cria organização, usuário, token, pasta e permissões em sequência pela API</li><li>Cadastra a fonte de dados (SQL Server) do cliente</li><li>Lista os dashboards modelo, baixa o JSON, adapta por JavaScript e publica por produto</li><li>Trata usuário já existente vinculando-o à nova organização</li><li>Envia o link e os dados de acesso por e-mail e devolve o resultado na tela</li></ul><div class="stack">n8n · Grafana HTTP API · SQL Server · JavaScript · SMTP</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="gptmaker">
+        <header class="case-head">
+          <div class="case-idx">07</div>
+          <div>
+            <span class="case-cat">Agente de IA</span>
+            <h3>Agente de IA no suporte com Bitrix24</h3>
+            <div class="case-kind">GPTMaker + Bitrix24 Open Channels e CRM <b>· 64 nós</b></div>
+          </div>
+          <span class="result">primeiro atendimento pelo agente, humano só quando precisa</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>agente-suporte.workflow</span><span class="live"><span class="dot"></span>9 etapas</span></div><div class="scroll"><svg viewBox="0 0 858 186" style="min-width:618px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge edge-alt" d="M357.0 70 V116"/><text class="elabel" x="363.0" y="108">não</text><path class="edge edge-alt" d="M69.0 70 V116"/><text class="elabel" x="75.0" y="108">chamados internos</text><path class="edge edge-alt" d="M128 141.0 H154"/><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Webhook</text><text x="21" y="57" class="s">gptmaker</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Normaliza</text><text x="165" y="57" class="s">dados do chat</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Resolvido?</text><text x="309" y="57" class="s">decisão</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Encerra chat</text><text x="453" y="57" class="s">open channel</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Negócio</text><text x="597" y="57" class="s">busca deal</text></g><g class="node on"><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">Concluído</text><text x="741" y="57" class="s">etapa do kanban</text></g><g class="node  ext"><rect x="298" y="116" width="118" height="50" rx="6"/><text x="309" y="137" class="t">Transfere</text><text x="309" y="153" class="s">fila humana</text></g><g class="node  ext"><rect x="10" y="116" width="118" height="50" rx="6"/><text x="21" y="137" class="t">Webhook</text><text x="21" y="153" class="s">chamado bitrix</text></g><g class="node  ext"><rect x="154" y="116" width="118" height="50" rx="6"/><text x="165" y="137" class="t">Kanban</text><text x="165" y="153" class="s">produto · N2</text></g><circle class="packet" r="4"><animateMotion dur="4.2s" repeatCount="indefinite" path="M69.0 45.0 H789.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>Agente que faz o primeiro atendimento nos canais abertos do Bitrix24. O n8n orquestra o que acontece no CRM a cada desfecho da conversa e mantém chat, negócio e chamado ligados.</p>
+          <div><ul><li>Resolvido: encerra o chat e move o negócio para concluído</li><li>Não resolvido: transfere para a fila de atendimento humano</li><li>Grava o ID do chat no negócio para ligar conversa e CRM</li><li>Roteia chamados internos de produto e N2 mudando a etapa no kanban</li><li>Ambiente de homologação separado para testar antes de publicar</li></ul><div class="stack">GPTMaker · n8n · Bitrix24 CRM e Open Channels · webhooks</div></div>
+        </div>
+      </article>
+      <article class="case reveal" id="ead">
+        <header class="case-head">
+          <div class="case-idx">08</div>
+          <div>
+            <span class="case-cat">Treinamento</span>
+            <h3>Plataforma EAD automatizada</h3>
+            <div class="case-kind">Matrícula em massa + páginas de curso geradas com IA <b>· 33 nós</b></div>
+          </div>
+          <span class="result">contas, matrículas e acessos sem trabalho manual</span>
+        </header>
+        <div class="diagram flowbox"><div class="diagram-head"><span>ead-matriculas.workflow</span><span class="live"><span class="dot"></span>8 etapas</span></div><div class="scroll"><svg viewBox="0 0 1002 186" style="min-width:706px" role="img" aria-hidden="true"><path class="edge" d="M128 45.0 H154"/><path class="edge" d="M272 45.0 H298"/><path class="edge" d="M416 45.0 H442"/><path class="edge" d="M560 45.0 H586"/><path class="edge" d="M704 45.0 H730"/><path class="edge" d="M848 45.0 H874"/><path class="edge edge-alt" d="M69.0 70 V116"/><text class="elabel" x="75.0" y="108">consulta</text><g class="node on"><rect x="10" y="20" width="118" height="50" rx="6"/><text x="21" y="41" class="t">Portal / API</text><text x="21" y="57" class="s">webhook</text></g><g class="node "><rect x="154" y="20" width="118" height="50" rx="6"/><text x="165" y="41" class="t">Origem</text><text x="165" y="57" class="s">sql ou manual</text></g><g class="node "><rect x="298" y="20" width="118" height="50" rx="6"/><text x="309" y="41" class="t">Identidade</text><text x="309" y="57" class="s">login · e-mail</text></g><g class="node "><rect x="442" y="20" width="118" height="50" rx="6"/><text x="453" y="41" class="t">Conta</text><text x="453" y="57" class="s">cria se faltar</text></g><g class="node "><rect x="586" y="20" width="118" height="50" rx="6"/><text x="597" y="41" class="t">Matrícula</text><text x="597" y="57" class="s">por curso</text></g><g class="node "><rect x="730" y="20" width="118" height="50" rx="6"/><text x="741" y="41" class="t">E-mail</text><text x="741" y="57" class="s">acessos</text></g><g class="node on"><rect x="874" y="20" width="118" height="50" rx="6"/><text x="885" y="41" class="t">Resumo</text><text x="885" y="57" class="s">resultado</text></g><g class="node  ext"><rect x="10" y="116" width="118" height="50" rx="6"/><text x="21" y="137" class="t">Catálogo</text><text x="21" y="153" class="s">cursos da api</text></g><circle class="packet" r="4"><animateMotion dur="4.9s" repeatCount="indefinite" path="M69.0 45.0 H933.0"/></circle></svg></div></div>
+        <div class="case-body">
+          <p>Portal e API que criam contas, matriculam usuários nos cursos e enviam os acessos. Os usuários podem vir do banco do sistema ou de uma lista manual. Em paralelo, um agente de IA monta as páginas dos cursos a partir do passo a passo e dos vídeos.</p>
+          <div><ul><li>Resolve a identidade por login ou e-mail antes de criar, evitando conta duplicada</li><li>Processamento em lote com resultado registrado por usuário</li><li>Catálogo de cursos consultado na própria API da plataforma</li><li>Agente de IA gera o HTML de cada curso (CSS inline, módulos em sanfona, vídeos por passo) seguindo diretrizes escritas por mim</li></ul><div class="stack">n8n · API da plataforma EAD · SQL Server · JavaScript · IA generativa</div></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="rotina" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">Automações de rotina</p>
+      <h2 class="section-title">Fiscal, financeiro e suporte à operação</h2>
+      <p class="section-lead">Fluxos menores que eliminam tarefas manuais do dia a dia: documentos fiscais entre sistemas, baixa de faturas, consultas e avisos.</p>
+      <div class="minis reveal">
+          <article class="mini">
+            <div class="tag">Fiscal</div>
+            <h4>Envio de CT-e para ERPs de clientes</h4>
+            <div class="meta">2 integrações · 18 nós cada</div>
+            <p>Busca os CT-es emitidos no TMS, envia para o ERP do cliente via API, marca o documento como enviado e mantém log. Relatório CSV diário por e-mail.</p>
+            <div class="flow"><span>cron 30 min</span><span>sql server</span><span>api do erp</span><span>marca enviado</span><span>log csv 08h</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Fiscal</div>
+            <h4>Recepção de NF-e por e-mail</h4>
+            <div class="meta">17 nós</div>
+            <p>Lê o e-mail com o arquivo da nota, extrai e valida os dados, confere se a NF-e e o cliente existem e grava pela API. Se a API falhar, tem um plano B direto no banco.</p>
+            <div class="flow"><span>imap</span><span>extrai .txt</span><span>valida</span><span>plano A: api</span><span>plano B: sql</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Financeiro</div>
+            <h4>Baixa automática de faturas</h4>
+            <div class="meta">14 nós</div>
+            <p>Lê o e-mail de pagamento, filtra os CT-es da fatura, dá baixa no sistema e envia o relatório diário do que foi e do que não foi processado.</p>
+            <div class="flow"><span>imap</span><span>js filtra ct-e</span><span>baixa sql</span><span>log</span><span>csv 08h</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Operação</div>
+            <h4>Portal de consultas operacionais</h4>
+            <div class="meta">11 nós</div>
+            <p>Formulário servido pelo n8n que consulta viagens, notas da viagem, notas da operação e ocorrências direto no banco do TMS.</p>
+            <div class="flow"><span>formulário</span><span>roteamento</span><span>4 consultas sql</span><span>resposta</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Gestão</div>
+            <h4>Passagem de bastão e alerta de prazos</h4>
+            <div class="meta">21 nós</div>
+            <p>E-mail automático quando o projeto troca de responsável (lido no feed do Bitrix) e aviso diário às 8h das tarefas que vencem no dia seguinte.</p>
+            <div class="flow"><span>webhook bitrix</span><span>feed #</span><span>já enviado?</span><span>e-mail</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Confiabilidade</div>
+            <h4>Monitor global de erros</h4>
+            <div class="meta">3 nós</div>
+            <p>Workflow de erro ligado a todos os outros: qualquer falha dispara um e-mail com o fluxo, o nó e a mensagem para correção rápida.</p>
+            <div class="flow"><span>error trigger</span><span>e-mail</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">CRM</div>
+            <h4>Movimentação de etapas no CRM</h4>
+            <div class="meta">4 nós</div>
+            <p>Webhooks que atualizam a etapa do negócio no Bitrix24 a partir de eventos externos, com versão de homologação.</p>
+            <div class="flow"><span>webhook</span><span>busca deal</span><span>altera etapa</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Utilitário</div>
+            <h4>Coleta do ID de grupos de WhatsApp</h4>
+            <div class="meta">10 nós</div>
+            <p>Comando /obterID enviado no grupo devolve o identificador e grava o vínculo, alimentando o fluxo de lembretes.</p>
+            <div class="flow"><span>mensagem</span><span>valida token</span><span>grava</span><span>responde</span></div>
+          </article>
+          <article class="mini">
+            <div class="tag">Agente de IA</div>
+            <h4>Agente de análise de layouts EDI</h4>
+            <div class="meta">engenharia de prompt</div>
+            <p>Agente que compara layouts e arquivos EDI (NOTFIS, CONEMB, DOCCOB, OCOREN) campo a campo e dá nota de 0 a 100 de compatibilidade com os layouts já cadastrados no TMS.</p>
+            <div class="flow"><span>layout do cliente</span><span>extrai campos</span><span>compara</span><span>nota 0–100</span></div>
+          </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="numeros" class="grid-bg">
+    <div class="wrap toolbars">
+      <div>
+        <p class="eyebrow">Por dentro dos workflows</p>
+        <h2 class="section-title">Mais código e integração do que arrastar blocos</h2>
+        <p>Contagem dos tipos de nó nas versões em produção. Os nós de código e de requisição HTTP dominam: a maior parte do trabalho é tratar dados e conversar com APIs que não têm conector pronto.</p>
+        <p>As versões de homologação e de testes ficaram fora da conta.</p>
+      </div>
+      <div class="reveal" role="img" aria-label="Gráfico de barras com a quantidade de nós por tipo"><div class="bar-row"><span>Code (JavaScript)</span><i style="width:100%"></i><b>125</b></div><div class="bar-row"><span>HTTP Request</span><i style="width:92%"></i><b>115</b></div><div class="bar-row"><span>Webhook + resposta</span><i style="width:57%"></i><b>71</b></div><div class="bar-row"><span>Set / mapeamento</span><i style="width:53%"></i><b>66</b></div><div class="bar-row"><span>IF / Switch</span><i style="width:53%"></i><b>66</b></div><div class="bar-row"><span>Data Tables</span><i style="width:43%"></i><b>54</b></div><div class="bar-row"><span>SQL Server</span><i style="width:16%"></i><b>20</b></div><div class="bar-row"><span>Sub-workflows</span><i style="width:15%"></i><b>19</b></div><div class="bar-row"><span>Agendamentos</span><i style="width:14%"></i><b>17</b></div></div>
+    </div>
+  </section>
+
+  <section class="cta grid-bg" style="border-top:1px solid var(--night-rule)">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Continue explorando</p>
+        <h2>Veja também o sistema que construí de ponta a ponta</h2>
+        <p>O CRMEntregas reúne várias dessas integrações (ASAAS, Google Maps, WhatsApp via n8n) dentro de um SaaS multi-empresa.</p>
+      </div>
+      <div class="btns">
+        <a href="crmentregas.html" class="btn btn-solid">Estudo de caso CRMEntregas</a>
+        <a href="index.html#experiencia" class="btn">Experiência</a>
+        <a href="index.html" class="btn">← Portfólio</a>
+      </div>
+    </div>
+    <div class="wrap"><p class="footer">Kauan Victor da Silva · Automações com n8n · 2026</p></div>
+  </section>
+
+  <script>
+    (function () {
+      var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          var id = a.getAttribute('href').slice(1);
+          var alvo = document.getElementById(id);
+          if (!alvo) return;
+          e.preventDefault();
+          alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' });
+          try { history.replaceState(null, '', '#' + id); } catch (err) {}
+        });
+      });
+      var links = document.querySelectorAll('.nav a');
+      var reveals = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function (entradas) {
+          entradas.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            links.forEach(function (l) { l.classList.toggle('active', l.getAttribute('href') === '#' + en.target.id); });
+          });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        links.forEach(function (l) { var s = document.querySelector(l.getAttribute('href')); if (s) obs.observe(s); });
+
+        if (!reduz) {
+          var rv = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (en) {
+              if (en.isIntersecting) { en.target.classList.add('in'); rv.unobserve(en.target); }
+            });
+          }, { rootMargin: '0px 0px -8% 0px' });
+          reveals.forEach(function (el) { rv.observe(el); });
+        } else {
+          reveals.forEach(function (el) { el.classList.add('in'); });
+        }
+      } else {
+        reveals.forEach(function (el) { el.classList.add('in'); });
+      }
+    })();
+  </script>
+</body>
+</html>

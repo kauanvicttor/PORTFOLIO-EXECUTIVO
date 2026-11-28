@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRMEntregas · Estudo de caso | Kauan Victor da Silva</title>
+  <meta name="description" content="Estudo de caso do CRMEntregas, SaaS multi-empresa de logística de medicação desenvolvido como projeto freelancer: arquitetura, módulos, segurança e o time de subagentes de IA que construiu o sistema." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #FAF8F4;
+      --paper-2: #F2EFE8;
+      --white: #FFFFFF;
+      --ink: #1B1B1A;
+      --ink-2: #4A4843;
+      --ink-3: #78756D;
+      --rule: #E2DED5;
+      --rule-strong: #C9C4B8;
+      --accent: #1F4E5F;
+      --accent-soft: #E6EEF0;
+      --night: #11161A;
+      --night-2: #182026;
+      --night-3: #1F2930;
+      --night-rule: rgba(255,255,255,0.09);
+      --night-ink: #ECE9E2;
+      --night-muted: #98A2A6;
+      --signal: #3DD68C;
+      --signal-ink: #0F7A4F;
+      --signal-soft: #E5F5EC;
+      --warn: #B4541A;
+      --warn-soft: #FBEDE3;
+      --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body { font-family: var(--sans); background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+    a { color: inherit; }
+    strong { font-weight: 600; }
+    code { font-family: var(--mono); font-size: 0.85em; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 3px; padding: 0.05rem 0.3rem; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Topbar */
+    .topbar { position: sticky; top: 0; z-index: 50; background: rgba(17,22,26,0.96); border-bottom: 1px solid var(--night-rule); }
+    .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 60px; }
+    .brand { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; text-decoration: none; white-space: nowrap; color: var(--night-ink); }
+    .brand span { color: var(--night-muted); font-weight: 400; }
+    .nav { display: flex; gap: 1.5rem; list-style: none; overflow-x: auto; }
+    .nav a { color: var(--night-muted); font-family: var(--mono); font-size: 0.8rem; text-decoration: none; white-space: nowrap; }
+    .nav a:hover, .nav a.active { color: var(--signal); }
+    .nav a.active::before { content: "> "; }
+    .back { font-family: var(--mono); font-size: 0.8rem; color: var(--night-ink); text-decoration: none; white-space: nowrap; border: 1px solid var(--night-rule); border-radius: 4px; padding: 0.35rem 0.7rem; }
+    .back:hover { color: var(--signal); border-color: var(--signal); }
+
+    /* Seções */
+    section { padding: 4.5rem 0; border-bottom: 1px solid var(--rule); }
+    .eyebrow { font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); margin-bottom: 0.75rem; }
+    .eyebrow::before { content: "// "; color: var(--signal-ink); }
+    .section-title { font-size: clamp(1.75rem, 3vw, 2.25rem); margin-bottom: 0.75rem; }
+    .section-lead { color: var(--ink-2); max-width: 680px; margin-bottom: 2.5rem; }
+    .alt { background: var(--paper-2); }
+
+    .grid-bg {
+      background-color: var(--night);
+      background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+      background-size: 40px 40px; background-position: -1px -1px;
+      color: var(--night-ink); border-bottom: 0;
+    }
+    .grid-bg .eyebrow { color: var(--night-muted); }
+    .grid-bg .eyebrow::before { color: var(--signal); }
+    .grid-bg .section-lead { color: #C9CDCB; }
+
+    /* Hero */
+    .hero { padding: 4.5rem 0 3.5rem; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .badge { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3rem 0.6rem; border-radius: 3px; border: 1px solid var(--night-rule); color: var(--night-ink); display: inline-flex; align-items: center; gap: 0.45rem; }
+    .badge.hl { border-color: var(--signal); color: var(--signal); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); display: inline-block; animation: blink 2.4s ease-in-out infinite; }
+    .hero h1 { font-size: clamp(2.5rem, 5.5vw, 4rem); letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    .hero .sub { font-family: var(--mono); color: var(--signal); font-size: 0.95rem; margin-bottom: 1.25rem; }
+    .hero .lead { color: #C9CDCB; font-size: 1.08rem; max-width: 720px; margin-bottom: 2rem; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: center; }
+    .frame { background: var(--night-2); border: 1px solid var(--night-rule); border-radius: 8px; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); }
+    .frame-head { display: flex; gap: 0.4rem; align-items: center; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--night-rule); font-family: var(--mono); font-size: 0.72rem; color: var(--night-muted); }
+    .frame-head i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.15); display: inline-block; }
+    .frame-head span { margin-left: 0.5rem; }
+    .frame img { display: block; width: 100%; height: auto; }
+    .role-box { border-top: 1px solid var(--night-rule); }
+    .role-box div { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--night-rule); font-size: 0.9rem; }
+    .role-box dt { color: var(--night-muted); font-family: var(--mono); font-size: 0.78rem; padding-top: 0.1rem; }
+
+    .numbers { display: grid; grid-template-columns: repeat(6, 1fr); border-top: 1px solid var(--night-rule); margin-top: 3rem; }
+    .numbers div { padding: 1.25rem 1rem 0 0; }
+    .numbers div + div { padding-left: 1rem; border-left: 1px solid var(--night-rule); }
+    .numbers strong { display: block; font-family: var(--mono); font-weight: 500; font-size: 1.6rem; line-height: 1.15; color: var(--night-ink); }
+    .numbers span { font-size: 0.8rem; color: var(--night-muted); }
+
+    /* Contexto */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+    .two p { color: var(--ink-2); margin-bottom: 1rem; }
+    .callout { border-left: 3px solid var(--signal-ink); background: var(--white); padding: 1.1rem 1.25rem; font-size: 0.95rem; color: var(--ink-2); }
+    .callout strong { color: var(--ink); }
+
+    /* Pipeline (ciclo da OS) */
+    .pipeline { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; margin-top: 2.5rem; counter-reset: st; border-top: 2px solid var(--ink); }
+    .stage { position: relative; padding: 1.1rem 0.9rem 0 0; }
+    .stage + .stage { padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+    .stage::before { counter-increment: st; content: counter(st, decimal-leading-zero); display: block; font-family: var(--mono); font-size: 0.72rem; color: var(--signal-ink); margin-bottom: 0.4rem; }
+    .stage h4 { font-family: var(--sans); font-size: 0.92rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .stage p { font-size: 0.8rem; color: var(--ink-3); }
+    .stage.gate h4::after { content: "portão"; margin-left: 0.4rem; font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warn); background: var(--warn-soft); padding: 0.05rem 0.3rem; border-radius: 2px; vertical-align: middle; }
+    .status-line { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 2rem; align-items: center; }
+    .status-line .lbl { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); margin-right: 0.4rem; }
+    .status-line span.s { font-family: var(--mono); font-size: 0.72rem; background: var(--white); border: 1px solid var(--rule-strong); border-radius: 3px; padding: 0.2rem 0.5rem; }
+    .status-line span.s:not(:last-child)::after { content: " →"; color: var(--signal-ink); }
+    .status-line span.s.end { border-color: var(--signal-ink); color: var(--signal-ink); }
+
+    /* Módulos */
+    .modules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+    .mod { background: var(--white); padding: 1.5rem; transition: background 0.15s, transform 0.15s; }
+    .mod:hover { background: #FCFCFA; }
+    .mod .ic { width: 34px; height: 34px; border-radius: 6px; background: var(--signal-soft); color: var(--signal-ink); display: grid; place-items: center; margin-bottom: 0.9rem; }
+    .mod .ic svg { width: 18px; height: 18px; }
+    .mod h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .mod p { font-size: 0.87rem; color: var(--ink-2); margin-bottom: 0.75rem; }
+    .mod ul { list-style: none; }
+    .mod li { font-size: 0.82rem; color: var(--ink-2); padding-left: 1rem; position: relative; margin-bottom: 0.25rem; }
+    .mod li::before { content: "–"; position: absolute; left: 0; color: var(--ink-3); }
+
+    /* Diagramas */
+    .diagram { background: var(--night-2); border: 1px solid var(--night-rule); border-radius: 8px; overflow: hidden; }
+    .diagram-head { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--night-rule); font-family: var(--mono); font-size: 0.75rem; color: var(--night-muted); }
+    .diagram-head .live { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--signal); }
+    .diagram svg { display: block; width: 100%; height: auto; }
+    .edge { fill: none; stroke: rgba(236,233,226,0.35); stroke-width: 1.5; }
+    .edge-alt { stroke-dasharray: 4 4; }
+    .edge-veto { stroke: #E0894F; stroke-dasharray: 4 4; }
+    .node rect { fill: var(--night-3); stroke: rgba(236,233,226,0.22); stroke-width: 1; }
+    .node .t { fill: var(--night-ink); font-family: var(--sans); font-size: 13px; font-weight: 600; }
+    .node .s { fill: var(--night-muted); font-family: var(--mono); font-size: 9.5px; }
+    .node.on rect { stroke: var(--signal); }
+    .node.veto rect { stroke: #E0894F; }
+    .node.ext rect { stroke-dasharray: 3 3; }
+    .zone { fill: rgba(255,255,255,0.02); stroke: rgba(236,233,226,0.12); stroke-dasharray: 2 4; }
+    .zone-t { fill: var(--night-muted); font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .port { fill: var(--night-2); stroke: rgba(236,233,226,0.5); stroke-width: 1.2; }
+    .packet { fill: var(--signal); }
+    .packet-alt { fill: var(--night-muted); }
+    .elabel { fill: var(--night-muted); font-family: var(--mono); font-size: 9px; }
+    .elabel.v { fill: #E0894F; }
+
+    .arch-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 2.5rem; align-items: start; }
+    .spec { border-top: 2px solid var(--ink); }
+    .spec div { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); font-size: 0.88rem; }
+    .spec dt { color: var(--ink-3); font-family: var(--mono); font-size: 0.78rem; padding-top: 0.1rem; }
+
+    .req { margin-top: 3rem; }
+    .req h3 { font-family: var(--sans); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid var(--ink); padding-bottom: 0.5rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; }
+    .req h3 span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
+    .chain { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: stretch; }
+    .chain div { flex: 1 1 130px; background: var(--white); border: 1px solid var(--rule-strong); border-radius: 4px; padding: 0.7rem 0.8rem; position: relative; }
+    .chain div b { display: block; font-family: var(--mono); font-size: 0.78rem; font-weight: 500; color: var(--ink); margin-bottom: 0.2rem; }
+    .chain div small { font-size: 0.76rem; color: var(--ink-3); line-height: 1.4; display: block; }
+    .chain div:not(:last-child)::after { content: "→"; position: absolute; right: -0.85rem; top: 50%; transform: translateY(-50%); color: var(--signal-ink); font-family: var(--mono); font-size: 0.85rem; z-index: 1; }
+
+    /* Subagentes */
+    .agents-wrap { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+    .agents { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--night-rule); border: 1px solid var(--night-rule); border-radius: 6px; overflow: hidden; }
+    .agent { background: var(--night-2); padding: 1.25rem 1.1rem; display: flex; flex-direction: column; }
+    .agent .step { font-family: var(--mono); font-size: 0.7rem; color: var(--signal); margin-bottom: 0.6rem; }
+    .agent h4 { font-family: var(--mono); font-size: 0.86rem; font-weight: 500; color: var(--night-ink); margin-bottom: 0.5rem; word-break: break-word; }
+    .agent p { font-size: 0.83rem; color: #C9CDCB; margin-bottom: 0.9rem; flex: 1; }
+    .agent dl { border-top: 1px solid var(--night-rule); font-size: 0.74rem; }
+    .agent dl div { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--night-rule); }
+    .agent dt { color: var(--night-muted); font-family: var(--mono); }
+    .agent dd { color: var(--night-ink); text-align: right; }
+    .agent.veto { box-shadow: inset 0 2px 0 #E0894F; }
+    .agent.veto .step { color: #E0894F; }
+    .tagw { display: inline-block; font-family: var(--mono); font-size: 0.66rem; padding: 0.05rem 0.35rem; border-radius: 2px; }
+    .tagw.y { background: rgba(61,214,140,0.14); color: var(--signal); }
+    .tagw.n { background: rgba(255,255,255,0.07); color: var(--night-muted); }
+
+    .calib { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .calib th { text-align: left; font-family: var(--mono); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--night-muted); padding: 0 0.75rem 0.6rem 0; border-bottom: 1px solid var(--night-rule); }
+    .calib td { padding: 0.75rem 0.75rem 0.75rem 0; border-bottom: 1px solid var(--night-rule); color: #C9CDCB; vertical-align: top; }
+    .calib td:first-child { color: var(--night-ink); font-weight: 600; white-space: nowrap; }
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .principle { border-top: 1px solid var(--night-rule); padding-top: 1rem; }
+    .principle .n { font-family: var(--mono); font-size: 0.72rem; color: var(--signal); display: block; margin-bottom: 0.4rem; }
+    .principle h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--night-ink); }
+    .principle p { font-size: 0.85rem; color: var(--night-muted); }
+    .sub-h { font-family: var(--sans); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--night-ink); margin-bottom: 1rem; display: flex; justify-content: space-between; gap: 1rem; }
+    .sub-h span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--night-muted); }
+
+    /* Segurança */
+    .sec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 3rem; }
+    .sec-item { padding: 1.1rem 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 2rem 1fr; gap: 0.5rem; }
+    .sec-item .ck { font-family: var(--mono); color: var(--signal-ink); font-size: 0.85rem; padding-top: 0.05rem; }
+    .sec-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .sec-item p { font-size: 0.86rem; color: var(--ink-2); }
+
+    /* Incidentes */
+    .incidents { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 3rem; }
+    .incident { background: var(--white); border: 1px solid var(--rule-strong); border-radius: 4px; overflow: hidden; }
+    .incident header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; border-bottom: 1px solid var(--rule); font-family: var(--mono); font-size: 0.72rem; color: var(--ink-3); }
+    .incident header b { color: var(--warn); font-weight: 500; }
+    .incident .body { padding: 1.1rem 1rem 1.2rem; }
+    .incident h4 { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.25; }
+    .incident p { font-size: 0.88rem; color: var(--ink-2); margin-bottom: 0.8rem; }
+    .incident .fix { font-family: var(--mono); font-size: 0.76rem; background: var(--signal-soft); color: var(--signal-ink); padding: 0.45rem 0.6rem; border-radius: 3px; }
+    .incident .fix::before { content: "✓ "; }
+
+    .proof { width: 100%; border-collapse: collapse; margin-top: 3rem; font-size: 0.86rem; background: var(--white); border: 1px solid var(--rule); }
+    .proof th { text-align: left; font-family: var(--mono); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); padding: 0.75rem 1rem; border-bottom: 2px solid var(--ink); background: var(--paper); }
+    .proof td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--rule); color: var(--ink-2); vertical-align: top; }
+    .proof td:first-child { font-family: var(--mono); font-size: 0.8rem; color: var(--ink); white-space: nowrap; }
+    .proof td.no { color: var(--warn); }
+
+    /* Deploy */
+    .deploy { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .dstep { border-top: 2px solid var(--ink); padding-top: 1rem; }
+    .dstep .n { font-family: var(--mono); font-size: 0.72rem; color: var(--signal-ink); display: block; margin-bottom: 0.4rem; }
+    .dstep h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .dstep p { font-size: 0.86rem; color: var(--ink-2); }
+    .version { margin-top: 3rem; display: grid; grid-template-columns: 1fr 1.4fr; gap: 3rem; align-items: center; }
+    .ver-big { font-family: var(--mono); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; letter-spacing: -0.02em; display: flex; gap: 0.15em; flex-wrap: wrap; }
+    .ver-big span { display: inline-flex; flex-direction: column; align-items: center; }
+    .ver-big small { font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 400; }
+    .ver-big i { font-style: normal; color: var(--rule-strong); }
+    .version p { color: var(--ink-2); font-size: 0.95rem; }
+
+    /* CTA */
+    .cta .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 3rem; align-items: center; }
+    .cta h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin-bottom: 0.75rem; }
+    .cta p { color: #C9CDCB; }
+    .btns { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--sans); font-size: 0.9rem; font-weight: 500; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; text-decoration: none; border: 1px solid rgba(255,255,255,0.28); background: transparent; color: var(--night-ink); }
+    .btn:hover { background: rgba(255,255,255,0.06); border-color: var(--night-ink); }
+    .btn-solid { background: var(--signal); border-color: var(--signal); color: #0B1A12; }
+    .btn-solid:hover { background: #5BE3A0; border-color: #5BE3A0; color: #0B1A12; }
+    .cta .footer { grid-column: 1 / -1; }
+    .footer { margin-top: 3rem; font-size: 0.8rem; color: #A8A498; border-top: 1px solid var(--night-rule); padding-top: 1.25rem; }
+
+    /* Revelação ao rolar */
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) {
+      .dot { animation: none; }
+      .packet, .packet-alt { display: none; }
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid, .two, .arch-grid, .cta .wrap, .version { grid-template-columns: 1fr; gap: 2.5rem; }
+      .numbers { grid-template-columns: repeat(3, 1fr); }
+      .numbers div:nth-child(4) { padding-left: 0; border-left: 0; }
+      .numbers div { padding-bottom: 1.25rem; }
+      .pipeline { grid-template-columns: repeat(4, 1fr); row-gap: 1.5rem; }
+      .stage:nth-child(5) { padding-left: 0; border-left: 0; }
+      .modules { grid-template-columns: 1fr 1fr; }
+      .agents { grid-template-columns: 1fr 1fr; }
+      .principles, .deploy { grid-template-columns: 1fr 1fr; }
+      .btns { justify-content: flex-start; }
+      .nav { display: none; }
+    }
+    @media (max-width: 640px) {
+      section { padding: 3.25rem 0; }
+      .brand span { display: none; }
+      .numbers { grid-template-columns: 1fr 1fr; }
+      .numbers div:nth-child(4) { padding-left: 1rem; border-left: 1px solid var(--night-rule); }
+      .numbers div:nth-child(odd) { padding-left: 0; border-left: 0; }
+      .pipeline { grid-template-columns: 1fr 1fr; }
+      .stage:nth-child(odd) { padding-left: 0; border-left: 0; }
+      .stage:nth-child(5) { padding-left: 0; }
+      .stage:nth-child(even) { padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+      .modules, .agents, .principles, .deploy, .sec-grid, .incidents { grid-template-columns: 1fr; }
+      .role-box div, .spec div { grid-template-columns: 1fr; gap: 0.1rem; }
+      .chain div:not(:last-child)::after { display: none; }
+      .calib { font-size: 0.8rem; }
+      .proof { font-size: 0.78rem; }
+      .proof th, .proof td { padding: 0.6rem; }
+      .proof td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a href="index.html" class="brand">Kauan Silva<span> · CRMEntregas</span></a>
+      <ul class="nav" id="nav">
+        <li><a href="#contexto">Contexto</a></li>
+        <li><a href="#modulos">Módulos</a></li>
+        <li><a href="#arquitetura">Arquitetura</a></li>
+        <li><a href="#agentes">Subagentes</a></li>
+        <li><a href="#qualidade">Segurança</a></li>
+        <li><a href="#deploy">Deploy</a></li>
+      </ul>
+      <a href="index.html#projeto" class="back">← portfólio</a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="topo" class="hero grid-bg">
+    <div class="wrap">
+      <div class="badges">
+        <span class="badge hl">Projeto freelancer</span>
+        <span class="badge"><span class="dot"></span>em produção</span>
+        <span class="badge">jun – nov 2026</span>
+        <span class="badge">v1.15</span>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <h1>CRMEntregas</h1>
+          <p class="sub">SaaS multi-empresa · logística de medicação de uso contínuo</p>
+          <p class="lead">Sistema que desenvolvi de ponta a ponta, como freelancer, para empresas que coletam medicamentos nas unidades do SUS e entregam a pacientes crônicos. Cobre o ciclo inteiro: cadastro do paciente, cobrança, roteirização, app do motoboy, rastreio público e comunicação por WhatsApp. Construído com um time fixo de subagentes de IA, cada um com papel, regras e portões de qualidade definidos.</p>
+          <dl class="role-box">
+            <div><dt>meu papel</dt><dd>Levantamento com o cliente, arquitetura, orquestração do time de IA, deploy e sustentação</dd></div>
+            <div><dt>modelo</dt><dd>Freelancer, com entregas em rodadas, homologação com o cliente e promoção manual para produção</dd></div>
+            <div><dt>dados</dt><dd>Saúde (LGPD art. 11) e dinheiro (PIX/boleto), o que define o rigor do processo</dd></div>
+          </dl>
+        </div>
+        <figure class="frame">
+          <div class="frame-head"><i></i><i></i><i></i><span>app.crmentregas · dashboard</span></div>
+          <img src="assets/crmentregas-dashboard.png" alt="Dashboard do CRMEntregas com indicadores operacionais, financeiros e de renovação" width="1365" height="651" />
+        </figure>
+      </div>
+
+      <div class="numbers">
+        <div><strong>30</strong><span>telas no sistema</span></div>
+        <div><strong>36</strong><span>modelos de dados</span></div>
+        <div><strong>~39 mil</strong><span>linhas de código</span></div>
+        <div><strong>57</strong><span>suítes de teste na API</span></div>
+        <div><strong>357</strong><span>commits em 6 meses</span></div>
+        <div><strong>5</strong><span>subagentes + 6 skills</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contexto -->
+  <section id="contexto">
+    <div class="wrap">
+      <p class="eyebrow">O problema</p>
+      <h2 class="section-title">Medicação que não pode atrasar</h2>
+      <div class="two">
+        <div>
+          <p>O cliente opera a retirada de medicamentos de alto custo nas unidades do SUS e a entrega na casa de pacientes crônicos, que dependem dessas doses todo mês. Antes do sistema, o controle ficava em planilhas e conversas de WhatsApp: renovação de receita, rota do dia, quem já pagou e o que já foi entregue.</p>
+          <p>O objetivo foi transformar essa operação em um produto: um SaaS em que cada empresa cliente é um ambiente isolado, com a sua equipe, os seus motoboys, as suas regras de cobrança e de comunicação.</p>
+        </div>
+        <div>
+          <p class="callout"><strong>Regra central do negócio:</strong> o serviço só começa depois do pagamento confirmado. A ordem passa por dois portões em sequência (pagamento e despacho) antes de aparecer no celular do motoboy, e pacientes de uso contínuo pagam um valor mensal cobrado automaticamente após cada entrega.</p>
+        </div>
+      </div>
+
+      <div class="pipeline reveal" aria-label="Ciclo de vida de uma ordem de entrega">
+        <div class="stage"><h4>Cadastro</h4><p>Paciente, medicamentos, médico, unidade SUS e região</p></div>
+        <div class="stage"><h4>Nova entrega</h4><p>Abre a ordem com valor e forma de pagamento</p></div>
+        <div class="stage gate"><h4>Pagamento</h4><p>PIX/boleto pelo ASAAS ou baixa manual libera a ordem</p></div>
+        <div class="stage gate"><h4>Logística</h4><p>Gestor revisa, ordena a rota e despacha</p></div>
+        <div class="stage"><h4>App do motoboy</h4><p>Coleta e entrega, com passagem de bastão</p></div>
+        <div class="stage"><h4>Rastreio</h4><p>Paciente acompanha por link público e WhatsApp</p></div>
+        <div class="stage"><h4>Financeiro</h4><p>Cobrança mensal, recebíveis e contas a pagar</p></div>
+      </div>
+
+      <div class="status-line reveal">
+        <span class="lbl">status no app:</span>
+        <span class="s">A retirar</span><span class="s">Saiu p/ coleta</span><span class="s">Coletado</span><span class="s">Entregue no escritório</span><span class="s">Saiu p/ entrega</span><span class="s end">Entregue</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Módulos -->
+  <section id="modulos" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">O que foi entregue</p>
+      <h2 class="section-title">Um produto completo, não um protótipo</h2>
+      <p class="section-lead">Portal administrativo, app de campo, portal público e painel do dono da plataforma, todos sobre a mesma API e com permissões por tela.</p>
+
+      <div class="modules reveal">
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h4>Pacientes e renovações</h4>
+          <p>Cadastro com medicamentos, médico, exames e responsável, e a renovação tratada como assinatura.</p>
+          <ul><li>Ciclo: vencida, pendente, em ciclo</li><li>Linha do tempo completa por paciente</li><li>Aviso diário de renovação ao consultório</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></div>
+          <h4>Logística e rotas</h4>
+          <p>Fases de coleta e entrega separadas, ordem de paradas por motoboy e otimização automática.</p>
+          <ul><li>Google Route Optimization</li><li>Caminho pelas ruas calculado no servidor</li><li>PDF de rota agrupado por motoboy</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div>
+          <h4>App do motoboy</h4>
+          <p>Visão mobile instalável com as ordens despachadas, na sequência definida pela logística.</p>
+          <ul><li>Navegação por Google Maps e Waze</li><li>Avanço de status em lote, com motivo</li><li>Mapa do dia em tela cheia</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+          <h4>Financeiro com ASAAS</h4>
+          <p>Contas a receber e a pagar, com cobrança PIX e boleto por empresa e conciliação por webhook.</p>
+          <ul><li>Valor líquido por forma de pagamento</li><li>Cobrança só após a baixa da entrega</li><li>Despesas fixas, avulsas e comissões</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h4>Comunicação e agente de IA</h4>
+          <p>E-mail e WhatsApp disparados a cada etapa, com modelos e variáveis configuráveis por empresa.</p>
+          <ul><li>WhatsApp via n8n, com segredo no webhook</li><li>Agente IA que atende leads e pacientes</li><li>Mensagens programadas fora do fim de semana</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h4>Rastreio público</h4>
+          <p>O paciente acompanha a entrega por um link com código, sem precisar de login.</p>
+          <ul><li>Previsão de chegada sem GPS</li><li>Limite de tentativas por código</li><li>Aviso de privacidade ao paciente</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <h4>Dashboard e alertas</h4>
+          <p>Indicadores operacionais, financeiros e de renovação, com gráficos em SVG feitos sem biblioteca.</p>
+          <ul><li>Entregas atrasadas e cobranças pendentes</li><li>Medicamentos não coletados no período</li><li>Exportação .xlsx em todos os grids</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+          <h4>Painel da plataforma</h4>
+          <p>Visão do dono do SaaS: cadastro de novas empresas, recursos liberados e bloqueio por inadimplência.</p>
+          <ul><li>Google ligado por empresa, com teto de uso</li><li>Publicação de termos versionados</li><li>Cobrança da própria mensalidade</li></ul>
+        </article>
+        <article class="mod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+          <h4>Central de ajuda</h4>
+          <p>Manual do usuário em 8 partes dentro do próprio sistema, conferido contra o código a cada mudança.</p>
+          <ul><li>Telas recriadas com os ícones reais</li><li>Script que falha se manual e código divergem</li><li>Imprime em PDF pelo navegador</li></ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Arquitetura -->
+  <section id="arquitetura">
+    <div class="wrap">
+      <p class="eyebrow">Arquitetura</p>
+      <h2 class="section-title">Monorepo, dois serviços e um banco gerenciado</h2>
+      <p class="section-lead">Frontend e API em containers separados no Coolify, banco e autenticação no Supabase em São Paulo. Cada integração externa é opcional e configurada por empresa.</p>
+
+      <div class="arch-grid">
+        <figure class="diagram reveal" aria-label="Diagrama de arquitetura: navegador e app do motoboy acessam o web em Nginx, que chama a API NestJS; a API valida o JWT do Supabase Auth, grava no PostgreSQL e conversa com ASAAS, Google e n8n">
+          <div class="diagram-head"><span>arquitetura.crmentregas</span><span class="live"><span class="dot"></span>prod + homol</span></div>
+          <svg viewBox="0 0 520 345" role="img" aria-hidden="true">
+            <rect class="zone" x="140" y="16" width="230" height="196" rx="8"/>
+            <text class="zone-t" x="152" y="34">coolify · docker</text>
+            <rect class="zone" x="390" y="16" width="120" height="196" rx="8"/>
+            <text class="zone-t" x="402" y="34">supabase · sp</text>
+            <rect class="zone" x="140" y="232" width="370" height="104" rx="8"/>
+            <text class="zone-t" x="152" y="327">integrações por empresa</text>
+
+            <path class="edge" d="M110 70 H160" />
+            <path class="edge" d="M110 150 Q135 150 135 110 Q135 70 160 70" />
+            <path class="edge" d="M240 98 V130" />
+            <path class="edge" d="M320 158 H410" />
+            <path class="edge edge-alt" d="M320 140 Q365 140 365 80 H410" />
+            <path class="edge edge-alt" d="M210 186 V268" />
+            <path class="edge edge-alt" d="M260 186 Q260 230 330 230 V268" />
+            <path class="edge edge-alt" d="M300 186 Q300 215 450 215 V268" />
+
+            <g class="node"><rect x="10" y="44" width="100" height="52" rx="6"/><text x="22" y="67" class="t">Navegador</text><text x="22" y="84" class="s">escritório</text></g>
+            <g class="node"><rect x="10" y="124" width="100" height="52" rx="6"/><text x="22" y="147" class="t">App motoboy</text><text x="22" y="164" class="s">mobile · pwa</text></g>
+            <g class="node"><rect x="160" y="44" width="160" height="54" rx="6"/><text x="172" y="67" class="t">web · React 19</text><text x="172" y="85" class="s">vite · nginx · csp</text></g>
+            <g class="node on"><rect x="160" y="130" width="160" height="56" rx="6"/><text x="172" y="153" class="t">api · NestJS 11</text><text x="172" y="171" class="s">prisma · guards · cron</text></g>
+            <g class="node"><rect x="410" y="54" width="90" height="52" rx="6"/><text x="420" y="77" class="t">Auth</text><text x="420" y="94" class="s">jwt · jwks</text></g>
+            <g class="node on"><rect x="410" y="132" width="90" height="52" rx="6"/><text x="420" y="155" class="t">Postgres</text><text x="420" y="172" class="s">com rls</text></g>
+            <g class="node ext"><rect x="160" y="268" width="100" height="38" rx="6"/><text x="172" y="284" class="t">ASAAS</text><text x="172" y="298" class="s">pix · boleto</text></g>
+            <g class="node ext"><rect x="280" y="268" width="100" height="38" rx="6"/><text x="292" y="284" class="t">Google</text><text x="292" y="298" class="s">rotas · geocode</text></g>
+            <g class="node ext"><rect x="400" y="268" width="100" height="38" rx="6"/><text x="412" y="284" class="t">n8n</text><text x="412" y="298" class="s">whatsapp · ia</text></g>
+
+            <circle class="port" cx="110" cy="70" r="3"/><circle class="port" cx="240" cy="98" r="3"/><circle class="port" cx="320" cy="158" r="3"/>
+            <circle class="packet" r="4"><animateMotion dur="3.4s" repeatCount="indefinite" path="M60 70 H240 V158 H455"/></circle>
+            <circle class="packet packet-alt" r="3"><animateMotion dur="3.4s" begin="1.4s" repeatCount="indefinite" path="M300 186 Q300 215 450 215 V286"/></circle>
+          </svg>
+        </figure>
+
+        <dl class="spec reveal">
+          <div><dt>frontend</dt><dd>React 19 + Vite, CSS com design tokens (sem framework), React Query com cache persistido, rotas lazy</dd></div>
+          <div><dt>backend</dt><dd>NestJS 11 + Prisma 6, CRUD genérico com escopo por empresa, soft-delete e auditoria automática</dd></div>
+          <div><dt>banco</dt><dd>PostgreSQL no Supabase com RLS; dois projetos: homologação e produção</dd></div>
+          <div><dt>auth</dt><dd>JWT do Supabase validado localmente (sem rede por requisição) e sessão única por usuário</dd></div>
+          <div><dt>integrações</dt><dd>ASAAS, Google Maps Platform, SMTP e n8n, ativadas por empresa</dd></div>
+          <div><dt>infra</dt><dd>Coolify em VPS, 4 apps Docker, auto-deploy só em homologação, backup diário validado</dd></div>
+        </dl>
+      </div>
+
+      <div class="req reveal">
+        <h3>Caminho de uma requisição <span>cada etapa barra o que não é seu</span></h3>
+        <div class="chain">
+          <div><b>AuthGuard</b><small>valida o token, o usuário ativo e a sessão única</small></div>
+          <div><b>PermissionGuard</b><small>ver, criar, editar ou excluir por tela</small></div>
+          <div><b>MasterGuard</b><small>rotas da plataforma só para o dono do SaaS</small></div>
+          <div><b>Controller</b><small>genérico ou específico, com limite de taxa</small></div>
+          <div><b>BaseCrudService</b><small>filtro por empresa e checagem das chaves estrangeiras</small></div>
+          <div><b>Prisma → Postgres</b><small>consultas parametrizadas, sem SQL interpolado</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subagentes -->
+  <section id="agentes" class="grid-bg">
+    <div class="wrap">
+      <p class="eyebrow">Como foi construído</p>
+      <h2 class="section-title">Um time fixo de subagentes de IA</h2>
+      <p class="section-lead">O desenvolvimento foi feito com Claude Code. A sessão principal atua como orquestradora e não implementa funcionalidade: delega a cinco subagentes com papéis fixos, cada um com uma skill obrigatória que carrega as regras reais do projeto. Segurança tem poder de veto, e nada chega ao cliente sem passar pelo QA.</p>
+
+      <div class="agents-wrap">
+        <figure class="diagram reveal" aria-label="Fluxo do time: o dono faz o pedido ao orquestrador, que aciona o gerente de produto; a especificação vai aos engenheiros de backend e frontend; o diff passa pela revisão de segurança, que pode vetar, e pela revisão de deploy e QA antes de voltar ao dono">
+          <div class="diagram-head"><span>.claude/ORQUESTRADOR.md</span><span class="live"><span class="dot"></span>fluxo de cada mudança</span></div>
+          <svg viewBox="0 0 980 230" role="img" aria-hidden="true">
+            <path class="edge" d="M100 115 H130" />
+            <path class="edge" d="M260 115 H290" />
+            <path class="edge" d="M430 100 Q450 100 450 62 H470" />
+            <path class="edge" d="M430 130 Q450 130 450 168 H470" />
+            <path class="edge" d="M610 62 Q630 62 630 100 H650" />
+            <path class="edge" d="M610 168 Q630 168 630 130 H650" />
+            <path class="edge" d="M790 115 H820" />
+            <path class="edge edge-veto" d="M720 145 V205 H360 V145" />
+            <text class="elabel v" x="474" y="220">veto → plano ou código volta</text>
+            <path class="edge edge-alt" d="M890 85 V20 H65 V85" />
+            <text class="elabel" x="420" y="14">pronto: só então reporto ao dono</text>
+
+            <g class="node ext"><rect x="10" y="85" width="90" height="60" rx="6"/><text x="22" y="111" class="t">Dono</text><text x="22" y="129" class="s">pedido</text></g>
+            <g class="node on"><rect x="130" y="85" width="130" height="60" rx="6"/><text x="142" y="111" class="t">Orquestrador</text><text x="142" y="129" class="s">sessão principal</text></g>
+            <g class="node"><rect x="290" y="85" width="140" height="60" rx="6"/><text x="302" y="111" class="t">Produto</text><text x="302" y="129" class="s">especifica · debate</text></g>
+            <g class="node"><rect x="470" y="35" width="140" height="54" rx="6"/><text x="482" y="58" class="t">Backend</text><text x="482" y="76" class="s">api/ · nestjs</text></g>
+            <g class="node"><rect x="470" y="141" width="140" height="54" rx="6"/><text x="482" y="164" class="t">Frontend</text><text x="482" y="182" class="s">web/ · react · manual</text></g>
+            <g class="node veto"><rect x="650" y="85" width="140" height="60" rx="6"/><text x="662" y="111" class="t">Segurança</text><text x="662" y="129" class="s">revisa diff · veto</text></g>
+            <g class="node on"><rect x="820" y="85" width="140" height="60" rx="6"/><text x="832" y="111" class="t">Deploy · QA</text><text x="832" y="129" class="s">prontidão</text></g>
+
+            <circle class="port" cx="260" cy="115" r="3"/><circle class="port" cx="430" cy="115" r="3"/><circle class="port" cx="790" cy="115" r="3"/>
+            <circle class="packet" r="4"><animateMotion dur="5s" repeatCount="indefinite" path="M55 115 H450 V62 H630 V115 H890"/></circle>
+            <circle class="packet packet-alt" r="3"><animateMotion dur="5s" begin="2.5s" repeatCount="indefinite" path="M360 115 H450 V168 H630 V115 H890"/></circle>
+          </svg>
+        </figure>
+
+        <div class="agents reveal">
+          <article class="agent">
+            <span class="step">01 · especifica</span>
+            <h4>gerente-de-produto</h4>
+            <p>Transforma o pedido em especificação: telas, regra de negócio, contrato da API, schema, critérios de aceite. Em mudança ampla, ataca o próprio plano e o submete à Segurança.</p>
+            <dl><div><dt>skills</dt><dd>negócio · arquiteto</dd></div><div><dt>escreve</dt><dd><span class="tagw n">não</span></dd></div></dl>
+          </article>
+          <article class="agent">
+            <span class="step">02 · implementa</span>
+            <h4>engenheiro-backend</h4>
+            <p>Implementa em <code style="background:transparent;border:0;color:var(--signal);padding:0">api/</code> a partir da spec: código, migração aditiva e testes. Entrega com build, testes e boot real do servidor exercitados.</p>
+            <dl><div><dt>skill</dt><dd>nestjs-prisma</dd></div><div><dt>escreve</dt><dd><span class="tagw y">sim</span></dd></div></dl>
+          </article>
+          <article class="agent">
+            <span class="step">02 · implementa</span>
+            <h4>engenheiro-frontend</h4>
+            <p>Implementa telas, componentes e o manual do usuário seguindo o design system. Componente compartilhado só muda com default que preserva quem já usa.</p>
+            <dl><div><dt>skill</dt><dd>design-system</dd></div><div><dt>escreve</dt><dd><span class="tagw y">sim</span></dd></div></dl>
+          </article>
+          <article class="agent veto">
+            <span class="step">03 · revisa · veto</span>
+            <h4>revisao-seguranca</h4>
+            <p>Revisa cada diff contra 12 pontos: rota sem permissão, consulta sem empresa, SQL interpolado, XSS, upload, SSRF, segredo vazado, escrita sem transação.</p>
+            <dl><div><dt>skill</dt><dd>segurança</dd></div><div><dt>escreve</dt><dd><span class="tagw n">read-only</span></dd></div></dl>
+          </article>
+          <article class="agent">
+            <span class="step">04 · libera</span>
+            <h4>revisao-deploy-qa</h4>
+            <p>Confere se pode subir: versão carimbada, migração na ordem, manual e docs em dia, lint, API subindo e login real exercitado.</p>
+            <dl><div><dt>skill</dt><dd>qa</dd></div><div><dt>escreve</dt><dd><span class="tagw n">read-only</span></dd></div></dl>
+          </article>
+        </div>
+
+        <div class="reveal">
+          <h3 class="sub-h">Calibragem pelo tamanho da mudança <span>rito aplicado a tudo vira formalidade</span></h3>
+          <table class="calib">
+            <thead><tr><th>Tamanho</th><th>O que é</th><th>O que roda</th></tr></thead>
+            <tbody>
+              <tr><td>Sem superfície</td><td>CSS, texto, documentação</td><td>Nenhum revisor; a dispensa é declarada em uma linha, com o motivo</td></tr>
+              <tr><td>Contida</td><td>Campo novo, ajuste de filtro, correção localizada</td><td>Engenheiro da camada, depois Segurança e QA sobre o diff</td></tr>
+              <tr><td>Ampla</td><td>Tela ou módulo novo, regra de negócio, schema, cobrança, permissão, autenticação</td><td>Time completo, com debate do plano e veto da Segurança antes de qualquer código</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="principles reveal">
+          <div class="principle"><span class="n">01</span><h4>Memória entre sessões</h4><p>Um <code style="background:transparent;border:0;color:var(--night-ink);padding:0">HANDOFF.md</code> passa o bastão: o que foi feito, o que ficou aberto e o que depende de decisão do dono.</p></div>
+          <div class="principle"><span class="n">02</span><h4>Conflito vai para o dono</h4><p>Se a Segurança veta algo que o Produto especificou, o orquestrador não escolhe lado: leva as duas posições com o custo de cada uma.</p></div>
+          <div class="principle"><span class="n">03</span><h4>Lacuna declarada é lacuna aberta</h4><p>Todo agente entrega duas listas, exercitado e não exercitado. O que não foi testado vira pendência, não nota de rodapé.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Segurança e qualidade -->
+  <section id="qualidade">
+    <div class="wrap">
+      <p class="eyebrow">Segurança e qualidade</p>
+      <h2 class="section-title">Dado de saúde e dinheiro pedem prova, não promessa</h2>
+      <p class="section-lead">Uma auditoria completa em agosto levantou 19 achados e virou o checklist que a Segurança aplica a cada mudança. As regras do projeto nasceram de problemas reais.</p>
+
+      <div class="sec-grid reveal">
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>Isolamento entre empresas</h4><p>Toda consulta filtra pela empresa e as chaves estrangeiras recebidas também são conferidas: não dá para apontar para o paciente de outro cliente.</p></div></div>
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>Permissão por tela e por ação</h4><p>Grupos com ver, criar, editar e excluir; testes de permissão sempre feitos com usuário comum, nunca com o administrador.</p></div></div>
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>Banco fechado por padrão</h4><p>RLS em todas as tabelas e a API pública do Supabase desligada, para que ninguém leia o banco por fora da aplicação.</p></div></div>
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>Sessão única e limite de taxa</h4><p>Um login ativo por usuário e limite de requisições nas rotas públicas, no login e nas ações em lote.</p></div></div>
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>LGPD aplicada</h4><p>Termos versionados com aceite registrado por conta, IP guardado só como hash e aviso de privacidade ao paciente.</p></div></div>
+        <div class="sec-item"><span class="ck">[✓]</span><div><h4>Backup que se verifica</h4><p>Dump diário às 03h10 que é apagado e falha se vier vazio; 30 dias de retenção mais o primeiro de cada mês.</p></div></div>
+      </div>
+
+      <div class="incidents reveal">
+        <article class="incident">
+          <header><span>incidente · ago/2026</span><b>login travado</b></header>
+          <div class="body">
+            <h4>O health check estava verde e ninguém conseguia entrar</h4>
+            <p>A rota de saúde é pública e nunca tocou a validação do token, que estourava o tempo buscando chaves na rede. O deploy "passou" olhando para o lugar errado.</p>
+            <div class="fix">smoke-login com orçamento de tempo antes de todo deploy</div>
+          </div>
+        </article>
+        <article class="incident">
+          <header><span>incidente · set/2026</span><b>tela quebrada</b></header>
+          <div class="body">
+            <h4>Build, testes e manual passaram; a tela de pacientes não</h4>
+            <p>Uma função renomeada continuou sendo chamada em um terceiro lugar. O empacotador não reclama de identificador inexistente; o lint apontava a linha exata.</p>
+            <div class="fix">no-undef novo no lint passou a bloquear o deploy</div>
+          </div>
+        </article>
+      </div>
+
+      <table class="proof reveal">
+        <thead><tr><th>Verificação</th><th>O que prova</th><th>O que não prova</th></tr></thead>
+        <tbody>
+          <tr><td>/api/health</td><td>processo de pé, banco alcançável, versão no ar</td><td class="no">nada sobre login, permissão ou telas</td></tr>
+          <tr><td>bundle publicado</td><td>o código certo foi para o ar</td><td class="no">que ele funciona</td></tr>
+          <tr><td>contagens do banco</td><td>nenhum dado de produção foi tocado</td><td class="no">que o sistema está utilizável</td></tr>
+          <tr><td>smoke-login</td><td>login, sessão e carregamento inicial dentro do tempo</td><td class="no">o comportamento de cada tela</td></tr>
+          <tr><td>lint do web</td><td>nenhuma referência a função inexistente</td><td class="no">que a tela faça a coisa certa</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Deploy -->
+  <section id="deploy" class="alt">
+    <div class="wrap">
+      <p class="eyebrow">Deploy e operação</p>
+      <h2 class="section-title">Homologação primeiro, sempre</h2>
+      <p class="section-lead">Cada rodada é validada pelo cliente em homologação. Produção só sobe sob comando explícito, por um script que respeita a ordem e para se algo falhar.</p>
+
+      <div class="deploy reveal">
+        <div class="dstep"><span class="n">01</span><h4>Push na main</h4><p>Auto-deploy apenas do ambiente de homologação, para o cliente testar.</p></div>
+        <div class="dstep"><span class="n">02</span><h4>Migração aditiva</h4><p>Aplicada antes do código, com simulação e o nome do projeto impresso antes de executar.</p></div>
+        <div class="dstep"><span class="n">03</span><h4>API, depois web</h4><p>O script espera a versão nova da API responder; se ela não subir, o front novo não vai.</p></div>
+        <div class="dstep"><span class="n">04</span><h4>Login real</h4><p>Smoke autenticado em produção e comparação das contagens antes e depois.</p></div>
+      </div>
+
+      <div class="version reveal">
+        <div class="ver-big" aria-label="Versão 1.15.1.0">
+          <span>1<small>marco</small></span><i>.</i><span>15<small>grande</small></span><i>.</i><span>1<small>médio</small></span><i>.</i><span>0<small>pequeno</small></span>
+        </div>
+        <p>A versão é carimbada no mesmo commit que sobe o código, nos dois serviços e no manual. O rodapé do sistema mostra o ambiente e a versão; se a API e o site divergirem, o rótulo fica laranja. É assim que se responde "isso já está no ar?" sem abrir o servidor.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Continue explorando -->
+  <section class="cta grid-bg">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Continue explorando</p>
+        <h2>Veja as automações e integrações que construí em n8n</h2>
+        <p>Agentes de IA, API entre empresas, portais, ETL para o Grafana e automações fiscais, com o fluxo de cada workflow desenhado.</p>
+      </div>
+      <div class="btns">
+        <a href="automacoes.html" class="btn btn-solid">Automações com n8n</a>
+        <a href="index.html#experiencia" class="btn">Experiência</a>
+        <a href="index.html" class="btn">← Portfólio</a>
+      </div>
+    </div>
+    <div class="wrap"><p class="footer">Kauan Victor da Silva · CRMEntregas, projeto freelancer · 2026</p></div>
+  </section>
+
+  <script>
+    (function () {
+      var reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          var id = a.getAttribute('href').slice(1);
+          var alvo = document.getElementById(id);
+          if (!alvo) return;
+          e.preventDefault();
+          alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' });
+          try { history.replaceState(null, '', '#' + id); } catch (err) {}
+        });
+      });
+      var links = document.querySelectorAll('.nav a');
+      var reveals = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function (entradas) {
+          entradas.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            links.forEach(function (l) { l.classList.toggle('active', l.getAttribute('href') === '#' + en.target.id); });
+          });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        links.forEach(function (l) { var s = document.querySelector(l.getAttribute('href')); if (s) obs.observe(s); });
+
+        if (!reduz) {
+          var rv = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (en) {
+              if (en.isIntersecting) { en.target.classList.add('in'); rv.unobserve(en.target); }
+            });
+          }, { rootMargin: '0px 0px -8% 0px' });
+          reveals.forEach(function (el) { rv.observe(el); });
+        } else {
+          reveals.forEach(function (el) { el.classList.add('in'); });
+        }
+      } else {
+        reveals.forEach(function (el) { el.classList.add('in'); });
+      }
+    })();
+  </script>
+</body>
+</html>
